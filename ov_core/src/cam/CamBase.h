@@ -19,6 +19,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+
+
 #ifndef OV_CORE_CAM_BASE_H
 #define OV_CORE_CAM_BASE_H
 
@@ -29,16 +31,6 @@
 
 namespace ov_core {
 
-/**
- * @brief Base pinhole camera model class
- *
- * This is the base class for all our camera models.
- * All these models are pinhole cameras, thus just have standard reprojection logic.
- *
- * See each base class for detailed examples on each model:
- *  - @ref ov_core::CamEqui
- *  - @ref ov_core::CamRadtan
- */
 class CamBase {
 
 public:
@@ -49,12 +41,11 @@ public:
    */
   CamBase(int width, int height) : _width(width), _height(height) {}
 
-  virtual ~CamBase() {}
-
   /**
    * @brief This will set and update the camera calibration values.
    * This should be called on startup for each camera and after update!
-   * @param calib Camera calibration information (f_x & f_y & c_x & c_y & k_1 & k_2 & k_3 & k_4)
+   * @param calib Camera calibration information (f_x & f_y & c_x & c_y & k_1 &
+   * k_2 & k_3 & k_4)
    */
   virtual void set_value(const Eigen::MatrixXd &calib) {
 
@@ -85,14 +76,16 @@ public:
   }
 
   /**
-   * @brief Given a raw uv point, this will undistort it based on the camera matrices into normalized camera coords.
+   * @brief Given a raw uv point, this will undistort it based on the camera
+   * matrices into normalized camera coords.
    * @param uv_dist Raw uv coordinate we wish to undistort
    * @return 2d vector of normalized coordinates
    */
   virtual Eigen::Vector2f undistort_f(const Eigen::Vector2f &uv_dist) = 0;
 
   /**
-   * @brief Given a raw uv point, this will undistort it based on the camera matrices into normalized camera coords.
+   * @brief Given a raw uv point, this will undistort it based on the camera
+   * matrices into normalized camera coords.
    * @param uv_dist Raw uv coordinate we wish to undistort
    * @return 2d vector of normalized coordinates
    */
@@ -104,7 +97,8 @@ public:
   }
 
   /**
-   * @brief Given a raw uv point, this will undistort it based on the camera matrices into normalized camera coords.
+   * @brief Given a raw uv point, this will undistort it based on the camera
+   * matrices into normalized camera coords.
    * @param uv_dist Raw uv coordinate we wish to undistort
    * @return 2d vector of normalized coordinates
    */
@@ -119,14 +113,16 @@ public:
   }
 
   /**
-   * @brief Given a normalized uv coordinate this will distort it to the raw image plane
+   * @brief Given a normalized uv coordinate this will distort it to the raw
+   * image plane
    * @param uv_norm Normalized coordinates we wish to distort
    * @return 2d vector of raw uv coordinate
    */
   virtual Eigen::Vector2f distort_f(const Eigen::Vector2f &uv_norm) = 0;
 
   /**
-   * @brief Given a normalized uv coordinate this will distort it to the raw image plane
+   * @brief Given a normalized uv coordinate this will distort it to the raw
+   * image plane
    * @param uv_norm Normalized coordinates we wish to distort
    * @return 2d vector of raw uv coordinate
    */
@@ -138,7 +134,8 @@ public:
   }
 
   /**
-   * @brief Given a normalized uv coordinate this will distort it to the raw image plane
+   * @brief Given a normalized uv coordinate this will distort it to the raw
+   * image plane
    * @param uv_norm Normalized coordinates we wish to distort
    * @return 2d vector of raw uv coordinate
    */
@@ -156,9 +153,12 @@ public:
    * @brief Computes the derivative of raw distorted to normalized coordinate.
    * @param uv_norm Normalized coordinates we wish to distort
    * @param H_dz_dzn Derivative of measurement z in respect to normalized
-   * @param H_dz_dzeta Derivative of measurement z in respect to intrinic parameters
+   * @param H_dz_dzeta Derivative of measurement z in respect to intrinic
+   * parameters
    */
-  virtual void compute_distort_jacobian(const Eigen::Vector2d &uv_norm, Eigen::MatrixXd &H_dz_dzn, Eigen::MatrixXd &H_dz_dzeta) = 0;
+  virtual void compute_distort_jacobian(const Eigen::Vector2d &uv_norm,
+                                        Eigen::MatrixXd &H_dz_dzn,
+                                        Eigen::MatrixXd &H_dz_dzeta) = 0;
 
   /// Gets the complete intrinsic vector
   Eigen::MatrixXd get_value() { return camera_values; }
@@ -179,7 +179,8 @@ protected:
   // Cannot construct the base camera class, needs a distortion model
   CamBase() = default;
 
-  /// Raw set of camera intrinic values (f_x & f_y & c_x & c_y & k_1 & k_2 & k_3 & k_4)
+  /// Raw set of camera intrinic values (f_x & f_y & c_x & c_y & k_1 & k_2 & k_3
+  /// & k_4)
   Eigen::MatrixXd camera_values;
 
   /// Camera intrinsics in OpenCV format

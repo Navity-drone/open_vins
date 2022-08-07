@@ -19,47 +19,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+
+
 #ifndef OV_CORE_QUAT_OPS_H
 #define OV_CORE_QUAT_OPS_H
 
-/*
- * @section Summary
- * This file contains the common utility functions for operating on JPL quaternions.
- * We need to take special care to handle edge cases when converting to and from other rotation formats.
- * All equations are based on the following tech report:
- * > Trawny, Nikolas, and Stergios I. Roumeliotis. "Indirect Kalman filter for 3D attitude estimation."
- * > University of Minnesota, Dept. of Comp. Sci. & Eng., Tech. Rep 2 (2005): 2005.
- * > http://mars.cs.umn.edu/tr/reports/Trawny05b.pdf
- *
- * @section JPL Quaternion Definition
- *
- * We define the quaternion as the following linear combination:
- * @f[
- *  \bar{q} = q_4+q_1\mathbf{i}+q_2\mathbf{j}+q_3\mathbf{k}
- * @f]
- * Where i,j,k are defined as the following:
- * @f[
- *  \mathbf{i}^2=-1~,~\mathbf{j}^2=-1~,~\mathbf{k}^2=-1
- * @f]
- * @f[
- *  -\mathbf{i}\mathbf{j}=\mathbf{j}\mathbf{i}=\mathbf{k}
- *  ~,~
- *  -\mathbf{j}\mathbf{k}=\mathbf{k}\mathbf{j}=\mathbf{i}
- *  ~,~
- *  -\mathbf{k}\mathbf{i}=\mathbf{i}\mathbf{k}=\mathbf{j}
- * @f]
- * As noted in [Trawny2005] this does not correspond to the Hamilton notation, and follows the "JPL Proposed Standard Conventions".
- * The q_4 quantity is the "scalar" portion of the quaternion, while q_1,q_2,q_3 are part of the "vector" portion.
- * We split the 4x1 vector into the following convention:
- * @f[
- *  \bar{q} = \begin{bmatrix}q_1\\q_2\\q_3\\q_4\end{bmatrix} = \begin{bmatrix}\mathbf{q}\\q_4\end{bmatrix}
- * @f]
- * It is also important to note that the quaternion is constrainted to the unit circle:
- * @f[
- *  |\bar{q}| = \sqrt{\bar{q}^\top\bar{q}} = \sqrt{|\mathbf{q}|^2+q_4^2} = 1
- * @f]
- *
- */
 
 #include <Eigen/Eigen>
 
@@ -68,13 +32,12 @@ namespace ov_core {
 /**
  * @brief Returns a JPL quaternion from a rotation matrix
  *
- * This is based on the equation 74 in [Indirect Kalman Filter for 3D Attitude Estimation](http://mars.cs.umn.edu/tr/reports/Trawny05b.pdf).
- * In the implementation, we have 4 statements so that we avoid a division by zero and
- * instead always divide by the largest diagonal element. This all comes from the
- * definition of a rotation matrix, using the diagonal elements and an off-diagonal.
- * \f{align*}{
- *  \mathbf{R}(\bar{q})=
- *  \begin{bmatrix}
+ * This is based on the equation 74 in [Indirect Kalman Filter for 3D Attitude
+ * Estimation](http://mars.cs.umn.edu/tr/reports/Trawny05b.pdf). In the
+ * implementation, we have 4 statements so that we avoid a division by zero and
+ * instead always divide by the largest diagonal element. This all comes from
+ * the definition of a rotation matrix, using the diagonal elements and an
+ * off-diagonal. \f{align*}{ \mathbf{R}(\bar{q})= \begin{bmatrix}
  *  q_1^2-q_2^2-q_3^2+q_4^2 & 2(q_1q_2+q_3q_4) & 2(q_1q_3-q_2q_4) \\
  *  2(q_1q_2-q_3q_4) & -q_2^2+q_2^2-q_3^2+q_4^2 & 2(q_2q_3+q_1q_4) \\
  *  2(q_1q_3+q_2q_4) & 2(q_2q_3-q_1q_4) & -q_1^2-q_2^2+q_3^2+q_4^2
@@ -84,21 +47,25 @@ namespace ov_core {
  * @param[in] rot 3x3 rotation matrix
  * @return 4x1 quaternion
  */
-inline Eigen::Matrix<double, 4, 1> rot_2_quat(const Eigen::Matrix<double, 3, 3> &rot) {
+inline Eigen::Matrix<double, 4, 1>
+rot_2_quat(const Eigen::Matrix<double, 3, 3> &rot) {
   Eigen::Matrix<double, 4, 1> q;
   double T = rot.trace();
-  if ((rot(0, 0) >= T) && (rot(0, 0) >= rot(1, 1)) && (rot(0, 0) >= rot(2, 2))) {
+  if ((rot(0, 0) >= T) && (rot(0, 0) >= rot(1, 1)) &&
+      (rot(0, 0) >= rot(2, 2))) {
     q(0) = sqrt((1 + (2 * rot(0, 0)) - T) / 4);
     q(1) = (1 / (4 * q(0))) * (rot(0, 1) + rot(1, 0));
     q(2) = (1 / (4 * q(0))) * (rot(0, 2) + rot(2, 0));
     q(3) = (1 / (4 * q(0))) * (rot(1, 2) - rot(2, 1));
 
-  } else if ((rot(1, 1) >= T) && (rot(1, 1) >= rot(0, 0)) && (rot(1, 1) >= rot(2, 2))) {
+  } else if ((rot(1, 1) >= T) && (rot(1, 1) >= rot(0, 0)) &&
+             (rot(1, 1) >= rot(2, 2))) {
     q(1) = sqrt((1 + (2 * rot(1, 1)) - T) / 4);
     q(0) = (1 / (4 * q(1))) * (rot(0, 1) + rot(1, 0));
     q(2) = (1 / (4 * q(1))) * (rot(1, 2) + rot(2, 1));
     q(3) = (1 / (4 * q(1))) * (rot(2, 0) - rot(0, 2));
-  } else if ((rot(2, 2) >= T) && (rot(2, 2) >= rot(0, 0)) && (rot(2, 2) >= rot(1, 1))) {
+  } else if ((rot(2, 2) >= T) && (rot(2, 2) >= rot(0, 0)) &&
+             (rot(2, 2) >= rot(1, 1))) {
     q(2) = sqrt((1 + (2 * rot(2, 2)) - T) / 4);
     q(0) = (1 / (4 * q(2))) * (rot(0, 2) + rot(2, 0));
     q(1) = (1 / (4 * q(2))) * (rot(1, 2) + rot(2, 1));
@@ -120,8 +87,8 @@ inline Eigen::Matrix<double, 4, 1> rot_2_quat(const Eigen::Matrix<double, 3, 3> 
 /**
  * @brief Skew-symmetric matrix from a given 3x1 vector
  *
- * This is based on equation 6 in [Indirect Kalman Filter for 3D Attitude Estimation](http://mars.cs.umn.edu/tr/reports/Trawny05b.pdf):
- * \f{align*}{
+ * This is based on equation 6 in [Indirect Kalman Filter for 3D Attitude
+ * Estimation](http://mars.cs.umn.edu/tr/reports/Trawny05b.pdf): \f{align*}{
  *  \lfloor\mathbf{v}\times\rfloor =
  *  \begin{bmatrix}
  *  0 & -v_3 & v_2 \\ v_3 & 0 & -v_1 \\ -v_2 & v_1 & 0
@@ -131,7 +98,8 @@ inline Eigen::Matrix<double, 4, 1> rot_2_quat(const Eigen::Matrix<double, 3, 3> 
  * @param[in] w 3x1 vector to be made a skew-symmetric
  * @return 3x3 skew-symmetric matrix
  */
-inline Eigen::Matrix<double, 3, 3> skew_x(const Eigen::Matrix<double, 3, 1> &w) {
+inline Eigen::Matrix<double, 3, 3>
+skew_x(const Eigen::Matrix<double, 3, 1> &w) {
   Eigen::Matrix<double, 3, 3> w_x;
   w_x << 0, -w(2), w(1), w(2), 0, -w(0), -w(1), w(0), 0;
   return w_x;
@@ -140,27 +108,31 @@ inline Eigen::Matrix<double, 3, 3> skew_x(const Eigen::Matrix<double, 3, 1> &w) 
 /**
  * @brief Converts JPL quaterion to SO(3) rotation matrix
  *
- * This is based on equation 62 in [Indirect Kalman Filter for 3D Attitude Estimation](http://mars.cs.umn.edu/tr/reports/Trawny05b.pdf):
- * \f{align*}{
- *  \mathbf{R} = (2q_4^2-1)\mathbf{I}_3-2q_4\lfloor\mathbf{q}\times\rfloor+2\mathbf{q}\mathbf{q}^\top
+ * This is based on equation 62 in [Indirect Kalman Filter for 3D Attitude
+ * Estimation](http://mars.cs.umn.edu/tr/reports/Trawny05b.pdf): \f{align*}{
+ *  \mathbf{R} =
+ * (2q_4^2-1)\mathbf{I}_3-2q_4\lfloor\mathbf{q}\times\rfloor+2\mathbf{q}\mathbf{q}^\top
  * @f}
  *
  * @param[in] q JPL quaternion
  * @return 3x3 SO(3) rotation matrix
  */
-inline Eigen::Matrix<double, 3, 3> quat_2_Rot(const Eigen::Matrix<double, 4, 1> &q) {
+inline Eigen::Matrix<double, 3, 3>
+quat_2_Rot(const Eigen::Matrix<double, 4, 1> &q) {
   Eigen::Matrix<double, 3, 3> q_x = skew_x(q.block(0, 0, 3, 1));
-  Eigen::MatrixXd Rot = (2 * std::pow(q(3, 0), 2) - 1) * Eigen::MatrixXd::Identity(3, 3) - 2 * q(3, 0) * q_x +
-                        2 * q.block(0, 0, 3, 1) * (q.block(0, 0, 3, 1).transpose());
+  Eigen::MatrixXd Rot =
+      (2 * std::pow(q(3, 0), 2) - 1) * Eigen::MatrixXd::Identity(3, 3) -
+      2 * q(3, 0) * q_x +
+      2 * q.block(0, 0, 3, 1) * (q.block(0, 0, 3, 1).transpose());
   return Rot;
 }
 
 /**
  * @brief Multiply two JPL quaternions
  *
- * This is based on equation 9 in [Indirect Kalman Filter for 3D Attitude Estimation](http://mars.cs.umn.edu/tr/reports/Trawny05b.pdf).
- * We also enforce that the quaternion is unique by having q_4 be greater than zero.
- * \f{align*}{
+ * This is based on equation 9 in [Indirect Kalman Filter for 3D Attitude
+ * Estimation](http://mars.cs.umn.edu/tr/reports/Trawny05b.pdf). We also enforce
+ * that the quaternion is unique by having q_4 be greater than zero. \f{align*}{
  *  \bar{q}\otimes\bar{p}=
  *  \mathcal{L}(\bar{q})\bar{p}=
  *  \begin{bmatrix}
@@ -176,11 +148,14 @@ inline Eigen::Matrix<double, 3, 3> quat_2_Rot(const Eigen::Matrix<double, 4, 1> 
  * @param[in] p Second JPL quaternion
  * @return 4x1 resulting q*p quaternion
  */
-inline Eigen::Matrix<double, 4, 1> quat_multiply(const Eigen::Matrix<double, 4, 1> &q, const Eigen::Matrix<double, 4, 1> &p) {
+inline Eigen::Matrix<double, 4, 1>
+quat_multiply(const Eigen::Matrix<double, 4, 1> &q,
+              const Eigen::Matrix<double, 4, 1> &p) {
   Eigen::Matrix<double, 4, 1> q_t;
   Eigen::Matrix<double, 4, 4> Qm;
   // create big L matrix
-  Qm.block(0, 0, 3, 3) = q(3, 0) * Eigen::MatrixXd::Identity(3, 3) - skew_x(q.block(0, 0, 3, 1));
+  Qm.block(0, 0, 3, 3) =
+      q(3, 0) * Eigen::MatrixXd::Identity(3, 3) - skew_x(q.block(0, 0, 3, 1));
   Qm.block(0, 3, 3, 1) = q.block(0, 0, 3, 1);
   Qm.block(3, 0, 1, 3) = -q.block(0, 0, 3, 1).transpose();
   Qm(3, 3) = q(3, 0);
@@ -211,9 +186,10 @@ inline Eigen::Matrix<double, 3, 1> vee(const Eigen::Matrix<double, 3, 3> &w_x) {
  * @brief SO(3) matrix exponential
  *
  * SO(3) matrix exponential mapping from the vector to SO(3) lie group.
- * This formula ends up being the [Rodrigues formula](https://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula).
- * This definition was taken from "Lie Groups for 2D and 3D Transformations" by Ethan Eade equation 15.
- * http://ethaneade.com/lie.pdf
+ * This formula ends up being the [Rodrigues
+ * formula](https://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula). This
+ * definition was taken from "Lie Groups for 2D and 3D Transformations" by Ethan
+ * Eade equation 15. http://ethaneade.com/lie.pdf
  *
  * \f{align*}{
  * \exp\colon\mathfrak{so}(3)&\to SO(3) \\
@@ -227,7 +203,8 @@ inline Eigen::Matrix<double, 3, 1> vee(const Eigen::Matrix<double, 3, 3> &w_x) {
  * @param[in] w 3x1 vector in R(3) we will take the exponential of
  * @return SO(3) rotation matrix
  */
-inline Eigen::Matrix<double, 3, 3> exp_so3(const Eigen::Matrix<double, 3, 1> &w) {
+inline Eigen::Matrix<double, 3, 3>
+exp_so3(const Eigen::Matrix<double, 3, 1> &w) {
   // get theta
   Eigen::Matrix<double, 3, 3> w_x = skew_x(w);
   double theta = w.norm();
@@ -253,15 +230,15 @@ inline Eigen::Matrix<double, 3, 3> exp_so3(const Eigen::Matrix<double, 3, 1> &w)
 /**
  * @brief SO(3) matrix logarithm
  *
- * This definition was taken from "Lie Groups for 2D and 3D Transformations" by Ethan Eade equation 17 & 18.
- * http://ethaneade.com/lie.pdf
- * \f{align*}{
+ * This definition was taken from "Lie Groups for 2D and 3D Transformations" by
+ * Ethan Eade equation 17 & 18. http://ethaneade.com/lie.pdf \f{align*}{
  * \theta &= \textrm{arccos}(0.5(\textrm{trace}(\mathbf{R})-1)) \\
- * \lfloor\mathbf{v}\times\rfloor &= \frac{\theta}{2\sin{\theta}}(\mathbf{R}-\mathbf{R}^\top)
+ * \lfloor\mathbf{v}\times\rfloor &=
+ * \frac{\theta}{2\sin{\theta}}(\mathbf{R}-\mathbf{R}^\top)
  * @f}
  *
- * This function is based on the GTSAM one as the original implementation was a bit unstable.
- * See the following:
+ * This function is based on the GTSAM one as the original implementation was a
+ * bit unstable. See the following:
  * - https://github.com/borglab/gtsam/
  * - https://github.com/borglab/gtsam/issues/746
  * - https://github.com/borglab/gtsam/pull/780
@@ -269,7 +246,8 @@ inline Eigen::Matrix<double, 3, 3> exp_so3(const Eigen::Matrix<double, 3, 1> &w)
  * @param[in] R 3x3 SO(3) rotation matrix
  * @return 3x1 in the R(3) space [omegax, omegay, omegaz]
  */
-inline Eigen::Matrix<double, 3, 1> log_so3(const Eigen::Matrix<double, 3, 3> &R) {
+inline Eigen::Matrix<double, 3, 1>
+log_so3(const Eigen::Matrix<double, 3, 3> &R) {
 
   // note switch to base 1
   double R11 = R(0, 0), R12 = R(0, 1), R13 = R(0, 2);
@@ -284,12 +262,15 @@ inline Eigen::Matrix<double, 3, 1> log_so3(const Eigen::Matrix<double, 3, 3> &R)
   // we do something special
   if (tr + 1.0 < 1e-10) {
     if (std::abs(R33 + 1.0) > 1e-5)
-      omega = (M_PI / sqrt(2.0 + 2.0 * R33)) * Eigen::Vector3d(R13, R23, 1.0 + R33);
+      omega =
+          (M_PI / sqrt(2.0 + 2.0 * R33)) * Eigen::Vector3d(R13, R23, 1.0 + R33);
     else if (std::abs(R22 + 1.0) > 1e-5)
-      omega = (M_PI / sqrt(2.0 + 2.0 * R22)) * Eigen::Vector3d(R12, 1.0 + R22, R32);
+      omega =
+          (M_PI / sqrt(2.0 + 2.0 * R22)) * Eigen::Vector3d(R12, 1.0 + R22, R32);
     else
       // if(std::abs(R.r1_.x()+1.0) > 1e-5)  This is implicit
-      omega = (M_PI / sqrt(2.0 + 2.0 * R11)) * Eigen::Vector3d(1.0 + R11, R21, R31);
+      omega =
+          (M_PI / sqrt(2.0 + 2.0 * R11)) * Eigen::Vector3d(1.0 + R11, R21, R31);
   } else {
     double magnitude;
     const double tr_3 = tr - 3.0; // always negative
@@ -313,12 +294,12 @@ inline Eigen::Matrix<double, 3, 1> log_so3(const Eigen::Matrix<double, 3, 3> &R)
  *
  * Equation is from Ethan Eade's reference: http://ethaneade.com/lie.pdf
  * \f{align*}{
- * \exp([\boldsymbol\omega,\mathbf u])&=\begin{bmatrix} \mathbf R & \mathbf V \mathbf u \\ \mathbf 0 & 1 \end{bmatrix} \\[1em]
- * \mathbf R &= \mathbf I + A \lfloor \boldsymbol\omega \times\rfloor + B \lfloor \boldsymbol\omega \times\rfloor^2 \\
- * \mathbf V &= \mathbf I + B \lfloor \boldsymbol\omega \times\rfloor + C \lfloor \boldsymbol\omega \times\rfloor^2
- * \f}
- * where we have the following definitions
- * \f{align*}{
+ * \exp([\boldsymbol\omega,\mathbf u])&=\begin{bmatrix} \mathbf R & \mathbf V
+ * \mathbf u \\ \mathbf 0 & 1 \end{bmatrix} \\[1em]
+ * \mathbf R &= \mathbf I + A \lfloor \boldsymbol\omega \times\rfloor + B
+ * \lfloor \boldsymbol\omega \times\rfloor^2 \\ \mathbf V &= \mathbf I + B
+ * \lfloor \boldsymbol\omega \times\rfloor + C \lfloor \boldsymbol\omega
+ * \times\rfloor^2 \f} where we have the following definitions \f{align*}{
  * \theta &= \sqrt{\boldsymbol\omega^\top\boldsymbol\omega} \\
  * A &= \sin\theta/\theta \\
  * B &= (1-\cos\theta)/\theta^2 \\
@@ -366,17 +347,17 @@ inline Eigen::Matrix4d exp_se3(Eigen::Matrix<double, 6, 1> vec) {
  *
  * Equation is from Ethan Eade's reference: http://ethaneade.com/lie.pdf
  * \f{align*}{
- * \boldsymbol\omega &=\mathrm{skew\_offdiags}\Big(\frac{\theta}{2\sin\theta}(\mathbf R - \mathbf R^\top)\Big) \\
- * \mathbf u &= \mathbf V^{-1}\mathbf t
- * \f}
- * where we have the following definitions
- * \f{align*}{
+ * \boldsymbol\omega
+ * &=\mathrm{skew\_offdiags}\Big(\frac{\theta}{2\sin\theta}(\mathbf R - \mathbf
+ * R^\top)\Big) \\ \mathbf u &= \mathbf V^{-1}\mathbf t \f} where we have the
+ * following definitions \f{align*}{
  * \theta &= \mathrm{arccos}((\mathrm{tr}(\mathbf R)-1)/2) \\
- * \mathbf V^{-1} &= \mathbf I - \frac{1}{2} \lfloor \boldsymbol\omega \times\rfloor + \frac{1}{\theta^2}\Big(1-\frac{A}{2B}\Big)\lfloor
+ * \mathbf V^{-1} &= \mathbf I - \frac{1}{2} \lfloor \boldsymbol\omega
+ * \times\rfloor + \frac{1}{\theta^2}\Big(1-\frac{A}{2B}\Big)\lfloor
  * \boldsymbol\omega \times\rfloor^2 \f}
  *
- * This function is based on the GTSAM one as the original implementation was a bit unstable.
- * See the following:
+ * This function is based on the GTSAM one as the original implementation was a
+ * bit unstable. See the following:
  * - https://github.com/borglab/gtsam/
  * - https://github.com/borglab/gtsam/issues/746
  * - https://github.com/borglab/gtsam/pull/780
@@ -409,8 +390,8 @@ inline Eigen::Matrix<double, 6, 1> log_se3(Eigen::Matrix4d mat) {
  * @brief Hat operator for R^6 -> Lie Algebra se(3)
  *
  * \f{align*}{
- * \boldsymbol\Omega^{\wedge} = \begin{bmatrix} \lfloor \boldsymbol\omega \times\rfloor & \mathbf u \\ \mathbf 0 & 0 \end{bmatrix}
- * \f}
+ * \boldsymbol\Omega^{\wedge} = \begin{bmatrix} \lfloor \boldsymbol\omega
+ * \times\rfloor & \mathbf u \\ \mathbf 0 & 0 \end{bmatrix} \f}
  *
  * @param vec 6x1 in the R(6) space [omega, u]
  * @return Lie algebra se(3) 4x4 matrix
@@ -426,11 +407,10 @@ inline Eigen::Matrix4d hat_se3(const Eigen::Matrix<double, 6, 1> &vec) {
  * @brief SE(3) matrix analytical inverse
  *
  * It seems that using the .inverse() function is not a good way.
- * This should be used in all cases we need the inverse instead of numerical inverse.
- * https://github.com/rpng/open_vins/issues/12
- * \f{align*}{
- * \mathbf{T}^{-1} = \begin{bmatrix} \mathbf{R}^\top & -\mathbf{R}^\top\mathbf{p} \\ \mathbf{0} & 1 \end{bmatrix}
- * \f}
+ * This should be used in all cases we need the inverse instead of numerical
+ * inverse. https://github.com/rpng/open_vins/issues/12 \f{align*}{
+ * \mathbf{T}^{-1} = \begin{bmatrix} \mathbf{R}^\top &
+ * -\mathbf{R}^\top\mathbf{p} \\ \mathbf{0} & 1 \end{bmatrix} \f}
  *
  * @param[in] T SE(3) matrix
  * @return inversed SE(3) matrix
@@ -445,8 +425,8 @@ inline Eigen::Matrix4d Inv_se3(const Eigen::Matrix4d &T) {
 /**
  * @brief JPL Quaternion inverse
  *
- * See equation 21 in [Indirect Kalman Filter for 3D Attitude Estimation](http://mars.cs.umn.edu/tr/reports/Trawny05b.pdf).
- * \f{align*}{
+ * See equation 21 in [Indirect Kalman Filter for 3D Attitude
+ * Estimation](http://mars.cs.umn.edu/tr/reports/Trawny05b.pdf). \f{align*}{
  *  \bar{q}^{-1} = \begin{bmatrix} -\mathbf{q} \\ q_4 \end{bmatrix}
  * \f}
  *
@@ -463,8 +443,8 @@ inline Eigen::Matrix<double, 4, 1> Inv(Eigen::Matrix<double, 4, 1> q) {
 /**
  * @brief Integrated quaternion from angular velocity
  *
- * See equation (48) of trawny tech report [Indirect Kalman Filter for 3D Attitude
- * Estimation](http://mars.cs.umn.edu/tr/reports/Trawny05b.pdf).
+ * See equation (48) of trawny tech report [Indirect Kalman Filter for 3D
+ * Attitude Estimation](http://mars.cs.umn.edu/tr/reports/Trawny05b.pdf).
  *
  */
 inline Eigen::Matrix<double, 4, 4> Omega(Eigen::Matrix<double, 3, 1> w) {
@@ -491,23 +471,29 @@ inline Eigen::Matrix<double, 4, 1> quatnorm(Eigen::Matrix<double, 4, 1> q_t) {
 /**
  * @brief Computes left Jacobian of SO(3)
  *
- * The left Jacobian of SO(3) is defined equation (7.77b) in [State Estimation for
- * Robotics](http://asrl.utias.utoronto.ca/~tdb/bib/barfoot_ser17.pdf) by Timothy D. Barfoot. Specifically it is the following (with
- * \f$\theta=|\boldsymbol\theta|\f$ and \f$\mathbf a=\boldsymbol\theta/|\boldsymbol\theta|\f$): \f{align*}{ J_l(\boldsymbol\theta) =
- * \frac{\sin\theta}{\theta}\mathbf I + \Big(1-\frac{\sin\theta}{\theta}\Big)\mathbf a \mathbf a^\top + \frac{1-\cos\theta}{\theta}\lfloor
- * \mathbf a \times\rfloor \f}
+ * The left Jacobian of SO(3) is defined equation (7.77b) in [State Estimation
+ * for Robotics](http://asrl.utias.utoronto.ca/~tdb/bib/barfoot_ser17.pdf) by
+ * Timothy D. Barfoot. Specifically it is the following (with
+ * \f$\theta=|\boldsymbol\theta|\f$ and \f$\mathbf
+ * a=\boldsymbol\theta/|\boldsymbol\theta|\f$): \f{align*}{
+ * J_l(\boldsymbol\theta) = \frac{\sin\theta}{\theta}\mathbf I +
+ * \Big(1-\frac{\sin\theta}{\theta}\Big)\mathbf a \mathbf a^\top +
+ * \frac{1-\cos\theta}{\theta}\lfloor \mathbf a \times\rfloor \f}
  *
  * @param w axis-angle
  * @return The left Jacobian of SO(3)
  */
-inline Eigen::Matrix<double, 3, 3> Jl_so3(const Eigen::Matrix<double, 3, 1> &w) {
+inline Eigen::Matrix<double, 3, 3>
+Jl_so3(const Eigen::Matrix<double, 3, 1> &w) {
   double theta = w.norm();
   if (theta < 1e-6) {
     return Eigen::MatrixXd::Identity(3, 3);
   } else {
     Eigen::Matrix<double, 3, 1> a = w / theta;
-    Eigen::Matrix<double, 3, 3> J = sin(theta) / theta * Eigen::MatrixXd::Identity(3, 3) + (1 - sin(theta) / theta) * a * a.transpose() +
-                                    ((1 - cos(theta)) / theta) * skew_x(a);
+    Eigen::Matrix<double, 3, 3> J =
+        sin(theta) / theta * Eigen::MatrixXd::Identity(3, 3) +
+        (1 - sin(theta) / theta) * a * a.transpose() +
+        ((1 - cos(theta)) / theta) * skew_x(a);
     return J;
   }
 }
@@ -516,13 +502,18 @@ inline Eigen::Matrix<double, 3, 3> Jl_so3(const Eigen::Matrix<double, 3, 1> &w) 
  * @brief Computes right Jacobian of SO(3)
  *
  * The right Jacobian of SO(3) is related to the left by Jl(-w)=Jr(w).
- * See equation (7.87) in [State Estimation for Robotics](http://asrl.utias.utoronto.ca/~tdb/bib/barfoot_ser17.pdf) by Timothy D. Barfoot.
- * See @ref Jl_so3() for the definition of the left Jacobian of SO(3).
+ * See equation (7.87) in [State Estimation for
+ * Robotics](http://asrl.utias.utoronto.ca/~tdb/bib/barfoot_ser17.pdf) by
+ * Timothy D. Barfoot. See @ref Jl_so3() for the definition of the left Jacobian
+ * of SO(3).
  *
  * @param w axis-angle
  * @return The right Jacobian of SO(3)
  */
-inline Eigen::Matrix<double, 3, 3> Jr_so3(const Eigen::Matrix<double, 3, 1> &w) { return Jl_so3(-w); }
+inline Eigen::Matrix<double, 3, 3>
+Jr_so3(const Eigen::Matrix<double, 3, 1> &w) {
+  return Jl_so3(-w);
+}
 
 /**
  * @brief Gets roll, pitch, yaw of argument rotation (in that order).
@@ -534,10 +525,12 @@ inline Eigen::Matrix<double, 3, 3> Jr_so3(const Eigen::Matrix<double, 3, 1> &w) 
  * @param rot Rotation matrix
  * @return roll, pitch, yaw values (in that order)
  */
-inline Eigen::Matrix<double, 3, 1> rot2rpy(const Eigen::Matrix<double, 3, 3> &rot) {
+inline Eigen::Matrix<double, 3, 1>
+rot2rpy(const Eigen::Matrix<double, 3, 3> &rot) {
   Eigen::Matrix<double, 3, 1> rpy;
-  rpy(1, 0) = atan2(-rot(2, 0), sqrt(rot(0, 0) * rot(0, 0) + rot(1, 0) * rot(1, 0)));
-  if (std::abs(cos(rpy(1, 0))) > 1.0e-12) {
+  rpy(1, 0) =
+      atan2(-rot(2, 0), sqrt(rot(0, 0) * rot(0, 0) + rot(1, 0) * rot(1, 0)));
+  if (std::abs(cos(rpy(1, 0)) > 1.0e-12)) {
     rpy(2, 0) = atan2(rot(1, 0) / cos(rpy(1, 0)), rot(0, 0) / cos(rpy(1, 0)));
     rpy(0, 0) = atan2(rot(2, 1) / cos(rpy(1, 0)), rot(2, 2) / cos(rpy(1, 0)));
   } else {

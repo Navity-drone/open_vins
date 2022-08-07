@@ -19,6 +19,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+
+
 #ifndef OV_CORE_FEATURE_HELPER_H
 #define OV_CORE_FEATURE_HELPER_H
 
@@ -33,22 +35,18 @@
 
 namespace ov_core {
 
-/**
- * @brief Contains some nice helper functions for features.
- *
- * These functions should only depend on feature and the feature database.
- */
 class FeatureHelper {
 
 public:
   /**
-   * @brief This functions will compute the disparity between common features in the two frames.
+   * @brief This functions will compute the disparity between common features in
+   * the two frames.
    *
    * First we find all features in the first frame.
-   * Then we loop through each and find the uv of it in the next requested frame.
-   * Features are skipped if no tracked feature is found (it was lost).
-   * NOTE: this is on the RAW coordinates of the feature not the normalized ones.
-   * NOTE: This computes the disparity over all cameras!
+   * Then we loop through each and find the uv of it in the next requested
+   * frame. Features are skipped if no tracked feature is found (it was lost).
+   * NOTE: this is on the RAW coordinates of the feature not the normalized
+   * ones. NOTE: This computes the disparity over all cameras!
    *
    * @param db Feature database pointer
    * @param time0 First camera frame timestamp
@@ -57,11 +55,13 @@ public:
    * @param disp_var Variance of the disparities
    * @param total_feats Total number of common features
    */
-  static void compute_disparity(std::shared_ptr<ov_core::FeatureDatabase> db, double time0, double time1, double &disp_mean,
+  static void compute_disparity(std::shared_ptr<ov_core::FeatureDatabase> db,
+                                double time0, double time1, double &disp_mean,
                                 double &disp_var, int &total_feats) {
 
     // Get features seen from the first image
-    std::vector<std::shared_ptr<Feature>> feats0 = db->features_containing(time0, false, true);
+    std::vector<std::shared_ptr<Feature>> feats0 =
+        db->features_containing(time0, false, true);
 
     // Compute the disparity
     std::vector<double> disparities;
@@ -72,9 +72,12 @@ public:
 
         // First find the two timestamps
         size_t camid = campairs.first;
-        auto it0 = std::find(feat->timestamps.at(camid).begin(), feat->timestamps.at(camid).end(), time0);
-        auto it1 = std::find(feat->timestamps.at(camid).begin(), feat->timestamps.at(camid).end(), time1);
-        if (it0 == feat->timestamps.at(camid).end() || it1 == feat->timestamps.at(camid).end())
+        auto it0 = std::find(feat->timestamps.at(camid).begin(),
+                             feat->timestamps.at(camid).end(), time0);
+        auto it1 = std::find(feat->timestamps.at(camid).begin(),
+                             feat->timestamps.at(camid).end(), time1);
+        if (it0 == feat->timestamps.at(camid).end() ||
+            it1 == feat->timestamps.at(camid).end())
           continue;
         auto idx0 = std::distance(feat->timestamps.at(camid).begin(), it0);
         auto idx1 = std::distance(feat->timestamps.at(camid).begin(), it1);
@@ -110,18 +113,17 @@ public:
   /**
    * @brief This functions will compute the disparity over all features we have
    *
-   * NOTE: this is on the RAW coordinates of the feature not the normalized ones.
-   * NOTE: This computes the disparity over all cameras!
+   * NOTE: this is on the RAW coordinates of the feature not the normalized
+   * ones. NOTE: This computes the disparity over all cameras!
    *
    * @param db Feature database pointer
    * @param disp_mean Average raw disparity
    * @param disp_var Variance of the disparities
    * @param total_feats Total number of common features
-   * @param newest_time Only compute disparity for ones older (-1 to disable)
-   * @param oldest_time Only compute disparity for ones newer (-1 to disable)
    */
-  static void compute_disparity(std::shared_ptr<ov_core::FeatureDatabase> db, double &disp_mean, double &disp_var, int &total_feats,
-                                double newest_time = 1, double oldest_time = 1) {
+  static void compute_disparity(std::shared_ptr<ov_core::FeatureDatabase> db,
+                                double &disp_mean, double &disp_var,
+                                int &total_feats) {
 
     // Compute the disparity
     std::vector<double> disparities;
@@ -132,29 +134,13 @@ public:
         if (campairs.second.size() < 2)
           continue;
 
-        // Now lets calculate the disparity (assumes time array is monotonic)
+        // Now lets calculate the disparity
         size_t camid = campairs.first;
-        bool found0 = false;
-        bool found1 = false;
-        Eigen::Vector2f uv0 = Eigen::Vector2f::Zero();
-        Eigen::Vector2f uv1 = Eigen::Vector2f::Zero();
-        for (size_t idx = 0; idx < feat.second->timestamps.at(camid).size(); idx++) {
-          double time = feat.second->timestamps.at(camid).at(idx);
-          if ((oldest_time == -1 || time > oldest_time) && !found0) {
-            uv0 = feat.second->uvs.at(camid).at(idx).block(0, 0, 2, 1);
-            found0 = true;
-            continue;
-          }
-          if ((newest_time == -1 || time < newest_time) && found0) {
-            uv1 = feat.second->uvs.at(camid).at(idx).block(0, 0, 2, 1);
-            found1 = true;
-            continue;
-          }
-        }
-
-        // If we found both an old and a new time, then we are good!
-        if (!found0 || !found1)
-          continue;
+        Eigen::Vector2f uv0 =
+            feat.second->uvs.at(camid).at(0).block(0, 0, 2, 1);
+        Eigen::Vector2f uv1 = feat.second->uvs.at(camid)
+                                  .at(campairs.second.size() - 1)
+                                  .block(0, 0, 2, 1);
         disparities.push_back((uv1 - uv0).norm());
       }
     }

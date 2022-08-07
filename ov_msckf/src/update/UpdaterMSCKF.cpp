@@ -19,43 +19,16 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+
+
 #include "UpdaterMSCKF.h"
-
-#include "UpdaterHelper.h"
-
-#include "feat/Feature.h"
-#include "feat/FeatureInitializer.h"
-#include "state/State.h"
-#include "state/StateHelper.h"
-#include "types/LandmarkRepresentation.h"
-#include "utils/colors.h"
-#include "utils/print.h"
-#include "utils/quat_ops.h"
-
-#include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/math/distributions/chi_squared.hpp>
 
 using namespace ov_core;
 using namespace ov_type;
 using namespace ov_msckf;
 
-UpdaterMSCKF::UpdaterMSCKF(UpdaterOptions &options, ov_core::FeatureInitializerOptions &feat_init_options) : _options(options) {
-
-  // Save our raw pixel noise squared
-  _options.sigma_pix_sq = std::pow(_options.sigma_pix, 2);
-
-  // Save our feature initializer
-  initializer_feat = std::shared_ptr<ov_core::FeatureInitializer>(new ov_core::FeatureInitializer(feat_init_options));
-
-  // Initialize the chi squared test table with confidence level 0.95
-  // https://github.com/KumarRobotics/msckf_vio/blob/050c50defa5a7fd9a04c1eed5687b405f02919b5/src/msckf_vio.cpp#L215-L221
-  for (int i = 1; i < 500; i++) {
-    boost::math::chi_squared chi_squared_dist(i);
-    chi_squared_table[i] = boost::math::quantile(chi_squared_dist, 0.95);
-  }
-}
-
-void UpdaterMSCKF::update(std::shared_ptr<State> state, std::vector<std::shared_ptr<Feature>> &feature_vec) {
+void UpdaterMSCKF::update(std::shared_ptr<State> state,
+                          std::vector<std::shared_ptr<Feature>> &feature_vec) {
 
   // Return if no features
   if (feature_vec.empty())
@@ -71,7 +44,8 @@ void UpdaterMSCKF::update(std::shared_ptr<State> state, std::vector<std::shared_
     clonetimes.emplace_back(clone_imu.first);
   }
 
-  // 1. Clean all feature measurements and make sure they all have valid clone times
+  // 1. Clean all feature measurements and make sure they all have valid clone
+  // times
   auto it0 = feature_vec.begin();
   while (it0 != feature_vec.end()) {
 
@@ -95,7 +69,9 @@ void UpdaterMSCKF::update(std::shared_ptr<State> state, std::vector<std::shared_
   rT1 = boost::posix_time::microsec_clock::local_time();
 
   // 2. Create vector of cloned *CAMERA* poses at each of our clone timesteps
-  std::unordered_map<size_t, std::unordered_map<double, FeatureInitializer::ClonePose>> clones_cam;
+  std::unordered_map<size_t,
+                     std::unordered_map<double, FeatureInitializer::ClonePose>>
+      clones_cam;
   for (const auto &clone_calib : state->_calib_IMUtoCAM) {
 
     // For this camera, create the vector of camera poses
@@ -103,11 +79,15 @@ void UpdaterMSCKF::update(std::shared_ptr<State> state, std::vector<std::shared_
     for (const auto &clone_imu : state->_clones_IMU) {
 
       // Get current camera pose
-      Eigen::Matrix<double, 3, 3> R_GtoCi = clone_calib.second->Rot() * clone_imu.second->Rot();
-      Eigen::Matrix<double, 3, 1> p_CioinG = clone_imu.second->pos() - R_GtoCi.transpose() * clone_calib.second->pos();
+      Eigen::Matrix<double, 3, 3> R_GtoCi =
+          clone_calib.second->Rot() * clone_imu.second->Rot();
+      Eigen::Matrix<double, 3, 1> p_CioinG =
+          clone_imu.second->pos() -
+          R_GtoCi.transpose() * clone_calib.second->pos();
 
       // Append to our map
-      clones_cami.insert({clone_imu.first, FeatureInitializer::ClonePose(R_GtoCi, p_CioinG)});
+      clones_cami.insert(
+          {clone_imu.first, FeatureInitializer::ClonePose(R_GtoCi, p_CioinG)});
     }
 
     // Append to our map
@@ -121,15 +101,18 @@ void UpdaterMSCKF::update(std::shared_ptr<State> state, std::vector<std::shared_
     // Triangulate the feature and remove if it fails
     bool success_tri = true;
     if (initializer_feat->config().triangulate_1d) {
-      success_tri = initializer_feat->single_triangulation_1d(*it1, clones_cam);
+      success_tri =
+          initializer_feat->single_triangulation_1d(it1->get(), clones_cam);
     } else {
-      success_tri = initializer_feat->single_triangulation(*it1, clones_cam);
+      success_tri =
+          initializer_feat->single_triangulation(it1->get(), clones_cam);
     }
 
     // Gauss-newton refine the feature
     bool success_refine = true;
     if (initializer_feat->config().refine_features) {
-      success_refine = initializer_feat->single_gaussnewton(*it1, clones_cam);
+      success_refine =
+          initializer_feat->single_gaussnewton(it1->get(), clones_cam);
     }
 
     // Remove the feature if not a success
@@ -151,7 +134,8 @@ void UpdaterMSCKF::update(std::shared_ptr<State> state, std::vector<std::shared_
   }
 
   // Calculate max possible state size (i.e. the size of our covariance)
-  // NOTE: that when we have the single inverse depth representations, those are only 1dof in size
+  // NOTE: that when we have the single inverse depth representations, those are
+  // only 1dof in size
   size_t max_hx_size = state->max_covariance_size();
   for (auto &landmark : state->_features_SLAM) {
     max_hx_size -= landmark.second->size();
@@ -176,14 +160,18 @@ void UpdaterMSCKF::update(std::shared_ptr<State> state, std::vector<std::shared_
     feat.uvs_norm = (*it2)->uvs_norm;
     feat.timestamps = (*it2)->timestamps;
 
-    // If we are using single inverse depth, then it is equivalent to using the msckf inverse depth
+    // If we are using single inverse depth, then it is equivalent to using the
+    // msckf inverse depth
     feat.feat_representation = state->_options.feat_rep_msckf;
-    if (state->_options.feat_rep_msckf == LandmarkRepresentation::Representation::ANCHORED_INVERSE_DEPTH_SINGLE) {
-      feat.feat_representation = LandmarkRepresentation::Representation::ANCHORED_MSCKF_INVERSE_DEPTH;
+    if (state->_options.feat_rep_msckf ==
+        LandmarkRepresentation::Representation::ANCHORED_INVERSE_DEPTH_SINGLE) {
+      feat.feat_representation =
+          LandmarkRepresentation::Representation::ANCHORED_MSCKF_INVERSE_DEPTH;
     }
 
     // Save the position and its fej value
-    if (LandmarkRepresentation::is_relative_representation(feat.feat_representation)) {
+    if (LandmarkRepresentation::is_relative_representation(
+            feat.feat_representation)) {
       feat.anchor_cam_id = (*it2)->anchor_cam_id;
       feat.anchor_clone_timestamp = (*it2)->anchor_clone_timestamp;
       feat.p_FinA = (*it2)->p_FinA;
@@ -193,32 +181,37 @@ void UpdaterMSCKF::update(std::shared_ptr<State> state, std::vector<std::shared_
       feat.p_FinG_fej = (*it2)->p_FinG;
     }
 
-    // Our return values (feature jacobian, state jacobian, residual, and order of state jacobian)
+    // Our return values (feature jacobian, state jacobian, residual, and order
+    // of state jacobian)
     Eigen::MatrixXd H_f;
     Eigen::MatrixXd H_x;
     Eigen::VectorXd res;
     std::vector<std::shared_ptr<Type>> Hx_order;
 
     // Get the Jacobian for this feature
-    UpdaterHelper::get_feature_jacobian_full(state, feat, H_f, H_x, res, Hx_order);
+    UpdaterHelper::get_feature_jacobian_full(state, feat, H_f, H_x, res,
+                                             Hx_order);
 
     // Nullspace project
     UpdaterHelper::nullspace_project_inplace(H_f, H_x, res);
 
     /// Chi2 distance check
-    Eigen::MatrixXd P_marg = StateHelper::get_marginal_covariance(state, Hx_order);
+    Eigen::MatrixXd P_marg =
+        StateHelper::get_marginal_covariance(state, Hx_order);
     Eigen::MatrixXd S = H_x * P_marg * H_x.transpose();
     S.diagonal() += _options.sigma_pix_sq * Eigen::VectorXd::Ones(S.rows());
     double chi2 = res.dot(S.llt().solve(res));
 
-    // Get our threshold (we precompute up to 500 but handle the case that it is more)
+    // Get our threshold (we precompute up to 500 but handle the case that it is
+    // more)
     double chi2_check;
     if (res.rows() < 500) {
       chi2_check = chi_squared_table[res.rows()];
     } else {
       boost::math::chi_squared chi_squared_dist(res.rows());
       chi2_check = boost::math::quantile(chi_squared_dist, 0.95);
-      PRINT_WARNING(YELLOW "chi2_check over the residual limit - %d\n" RESET, (int)res.rows());
+      PRINT_WARNING(YELLOW "chi2_check over the residual limit - %d\n" RESET,
+                    (int)res.rows());
     }
 
     // Check if we should delete or not
@@ -226,9 +219,9 @@ void UpdaterMSCKF::update(std::shared_ptr<State> state, std::vector<std::shared_
       (*it2)->to_delete = true;
       it2 = feature_vec.erase(it2);
       // PRINT_DEBUG("featid = %d\n", feat.featid);
-      // PRINT_DEBUG("chi2 = %f > %f\n", chi2, _options.chi2_multipler*chi2_check);
-      // std::stringstream ss;
-      // ss << "res = " << std::endl << res.transpose() << std::endl;
+      // PRINT_DEBUG("chi2 = %f > %f\n", chi2,
+      // _options.chi2_multipler*chi2_check); std::stringstream ss; ss << "res =
+      // " << std::endl << res.transpose() << std::endl;
       // PRINT_DEBUG(ss.str().c_str());
       continue;
     }
@@ -245,7 +238,8 @@ void UpdaterMSCKF::update(std::shared_ptr<State> state, std::vector<std::shared_
       }
 
       // Append to our large Jacobian
-      Hx_big.block(ct_meas, Hx_mapping[var], H_x.rows(), var->size()) = H_x.block(0, ct_hx, H_x.rows(), var->size());
+      Hx_big.block(ct_meas, Hx_mapping[var], H_x.rows(), var->size()) =
+          H_x.block(0, ct_hx, H_x.rows(), var->size());
       ct_hx += var->size();
     }
 
@@ -279,17 +273,25 @@ void UpdaterMSCKF::update(std::shared_ptr<State> state, std::vector<std::shared_
   rT4 = boost::posix_time::microsec_clock::local_time();
 
   // Our noise is isotropic, so make it here after our compression
-  Eigen::MatrixXd R_big = _options.sigma_pix_sq * Eigen::MatrixXd::Identity(res_big.rows(), res_big.rows());
+  Eigen::MatrixXd R_big =
+      _options.sigma_pix_sq *
+      Eigen::MatrixXd::Identity(res_big.rows(), res_big.rows());
 
   // 6. With all good features update the state
   StateHelper::EKFUpdate(state, Hx_order_big, Hx_big, res_big, R_big);
   rT5 = boost::posix_time::microsec_clock::local_time();
 
   // Debug print timing information
-  PRINT_DEBUG("[MSCKF-UP]: %.4f seconds to clean\n", (rT1 - rT0).total_microseconds() * 1e-6);
-  PRINT_DEBUG("[MSCKF-UP]: %.4f seconds to triangulate\n", (rT2 - rT1).total_microseconds() * 1e-6);
-  PRINT_DEBUG("[MSCKF-UP]: %.4f seconds create system (%d features)\n", (rT3 - rT2).total_microseconds() * 1e-6, (int)feature_vec.size());
-  PRINT_DEBUG("[MSCKF-UP]: %.4f seconds compress system\n", (rT4 - rT3).total_microseconds() * 1e-6);
-  PRINT_DEBUG("[MSCKF-UP]: %.4f seconds update state (%d size)\n", (rT5 - rT4).total_microseconds() * 1e-6, (int)res_big.rows());
-  PRINT_DEBUG("[MSCKF-UP]: %.4f seconds total\n", (rT5 - rT1).total_microseconds() * 1e-6);
+  PRINT_DEBUG("[MSCKF-UP]: %.4f seconds to clean\n",
+              (rT1 - rT0).total_microseconds() * 1e-6);
+  PRINT_DEBUG("[MSCKF-UP]: %.4f seconds to triangulate\n",
+              (rT2 - rT1).total_microseconds() * 1e-6);
+  PRINT_DEBUG("[MSCKF-UP]: %.4f seconds create system (%d features)\n",
+              (rT3 - rT2).total_microseconds() * 1e-6, (int)feature_vec.size());
+  PRINT_DEBUG("[MSCKF-UP]: %.4f seconds compress system\n",
+              (rT4 - rT3).total_microseconds() * 1e-6);
+  PRINT_DEBUG("[MSCKF-UP]: %.4f seconds update state (%d size)\n",
+              (rT5 - rT4).total_microseconds() * 1e-6, (int)res_big.rows());
+  PRINT_DEBUG("[MSCKF-UP]: %.4f seconds total\n",
+              (rT5 - rT1).total_microseconds() * 1e-6);
 }

@@ -17,11 +17,10 @@ details on what the system supports.
 * Github project page - https://github.com/rpng/open_vins
 * Documentation - https://docs.openvins.com/
 * Getting started guide - https://docs.openvins.com/getting-started.html
-* Publication reference - https://pgeneva.com/downloads/papers/Geneva2020ICRA.pdf
+* Publication reference - http://udel.edu/~pgeneva/downloads/papers/c10.pdf
 
 ## News / Events
 
-* **July 14, 2022** - Improved feature extraction logic for >100hz tracking, some bug fixes and updated scripts. See v2.6.1 [PR#259](https://github.com/rpng/open_vins/pull/259) and v2.6.2 [PR#264](https://github.com/rpng/open_vins/pull/264).
 * **March 14, 2022** - Initial dynamic initialization open sourcing, asynchronous subscription to inertial readings and publishing of odometry, support for lower frequency feature tracking. See v2.6 [PR#232](https://github.com/rpng/open_vins/pull/232) for details.
 * **December 13, 2021** - New YAML configuration system, ROS2 support, Docker images, robust static initialization based on disparity, internal logging system to reduce verbosity, image transport publishers, dynamic number of features support, and other small fixes. See
   v2.5 [PR#209](https://github.com/rpng/open_vins/pull/209) for details.
@@ -81,8 +80,8 @@ details on what the system supports.
     * Sparse feature SLAM features
 * Visual tracking support
     * Monocular camera
-    * Stereo camera (synchronized)
-    * Binocular cameras (synchronized)
+    * Stereo camera
+    * Binocular (synchronized) cameras
     * KLT or descriptor based
     * Masked tracking
 * Static and dynamic state initialization
@@ -170,5 +169,3 @@ following:
 
 The codebase and documentation is licensed under the [GNU General Public License v3 (GPL-3)](https://www.gnu.org/licenses/gpl-3.0.txt).
 You must preserve the copyright and license notices in your derivative work and make available the complete source code with modifications under the same license ([see this](https://choosealicense.com/licenses/gpl-3.0/); this is not legal advice).
-
-

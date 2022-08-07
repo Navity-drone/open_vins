@@ -19,28 +19,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-/**
- * @namespace ov_core
- * @brief Core algorithms for OpenVINS
- *
- * This has the core algorithms that all projects within the OpenVINS ecosystem leverage.
- * The purpose is to allow for the reuse of code that could be shared between different localization systems (i.e. msckf-based, batch-based,
- * etc.). These algorithms are the foundation which is necessary before we can even write an estimator that can perform localization. The
- * key components of the ov_core codebase are the following:
- *
- * - 3d feature initialization (see @ref ov_core::FeatureInitializer)
- * - SE(3) b-spline (see @ref ov_core::BsplineSE3)
- * - KLT, descriptor, aruco, and simulation feature trackers
- * - Groundtruth dataset reader (see @ref ov_core::DatasetReader)
- * - Quaternion and other manifold math operations
- * - Generic type system and their implementations (see @ref ov_type namespace)
- * - Closed-form preintegration @cite Eckenhoff2019IJRR
- *
- * Please take a look at classes that we offer for the user to leverage as each has its own documentation.
- * If you are looking for the estimator please take a look at the ov_msckf project which leverages these algorithms.
- * If you are looking for the different types please take a look at the ov_type namespace for the ones we have.
- *
- */
+
+
 namespace ov_core {}
 
 /**
@@ -48,11 +28,12 @@ namespace ov_core {}
  * @brief Dynamic type system types
  *
  * Types leveraged by the EKF system for covariance management.
- * These types store where they are in the covariance along with their current estimate.
- * Each also has an update function that takes a vector delta and updates their manifold representation.
- * Please see each type for details on what they represent, but their names should be straightforward.
- * See @ref dev-index for high level details on how the type system and covariance management works.
- * Each type is described by the following:
+ * These types store where they are in the covariance along with their current
+ * estimate. Each also has an update function that takes a vector delta and
+ * updates their manifold representation. Please see each type for details on
+ * what they represent, but their names should be straightforward. See @ref
+ * dev-index for high level details on how the type system and covariance
+ * management works. Each type is described by the following:
  *
  * @code{.cpp}
  * class Type {

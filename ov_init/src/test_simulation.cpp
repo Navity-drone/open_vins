@@ -19,6 +19,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+
+
 #include <cmath>
 #include <csignal>
 #include <deque>
@@ -35,7 +37,7 @@
 #endif
 
 #include "init/InertialInitializerOptions.h"
-#include "sim/SimulatorInit.h"
+#include "sim/Simulator.h"
 
 using namespace ov_init;
 
@@ -73,7 +75,7 @@ int main(int argc, char **argv) {
   InertialInitializerOptions params;
   params.print_and_load(parser);
   params.print_and_load_simulation(parser);
-  SimulatorInit sim(params);
+  Simulator sim(params);
 
   // Continue to simulate until we have processed all the measurements
   signal(SIGINT, signal_callback_handler);
@@ -84,7 +86,8 @@ int main(int argc, char **argv) {
     Eigen::Vector3d wm, am;
     bool hasimu = sim.get_next_imu(time_imu, wm, am);
     if (hasimu) {
-      PRINT_DEBUG("new imu measurement = %0.15g | w = %0.3g | a = %0.3g\n", time_imu, wm.norm(), am.norm());
+      PRINT_DEBUG("new imu measurement = %0.15g | w = %0.3g | a = %0.3g\n",
+                  time_imu, wm.norm(), am.norm());
     }
 
     // CAM: get the next simulated camera uv measurements if we have them
@@ -93,7 +96,8 @@ int main(int argc, char **argv) {
     std::vector<std::vector<std::pair<size_t, Eigen::VectorXf>>> feats;
     bool hascam = sim.get_next_cam(time_cam, camids, feats);
     if (hascam) {
-      PRINT_DEBUG("new cam measurement = %0.15g | %u cameras | uvs(0) = %u \n", time_cam, camids.size(), feats.at(0).size());
+      PRINT_DEBUG("new cam measurement = %0.15g | %u cameras | uvs(0) = %u \n",
+                  time_cam, camids.size(), feats.at(0).size());
     }
   }
 

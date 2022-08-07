@@ -19,6 +19,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+
+
 #include <cmath>
 #include <deque>
 #include <sstream>
@@ -35,8 +37,6 @@
 #include <opencv2/highgui/highgui.hpp>
 
 #include "cam/CamRadtan.h"
-#include "feat/Feature.h"
-#include "feat/FeatureDatabase.h"
 #include "track/TrackAruco.h"
 #include "track/TrackDescriptor.h"
 #include "track/TrackKLT.h"
@@ -57,9 +57,6 @@ int featslengths = 0;
 int clone_states = 10;
 std::deque<double> clonetimes;
 ros::Time time_start;
-
-// How many cameras we will do visual tracking on (mono=1, stereo=2)
-int max_cameras = 2;
 
 // Our master function for tracking
 void handle_stereo(double time0, double time1, cv::Mat img0, cv::Mat img1);
@@ -83,7 +80,7 @@ int main(int argc, char **argv) {
   parser->set_node_handler(nh);
 
   // Verbosity
-  std::string verbosity = "DEBUG";
+  std::string verbosity = "INFO";
   parser->parse_config("verbosity", verbosity);
   ov_core::Printer::setPrintLevel(verbosity);
 
@@ -91,13 +88,17 @@ int main(int argc, char **argv) {
   std::string topic_camera0, topic_camera1;
   nh->param<std::string>("topic_camera0", topic_camera0, "/cam0/image_raw");
   nh->param<std::string>("topic_camera1", topic_camera1, "/cam1/image_raw");
-  parser->parse_external("relative_config_imucam", "cam" + std::to_string(0), "rostopic", topic_camera0);
-  parser->parse_external("relative_config_imucam", "cam" + std::to_string(1), "rostopic", topic_camera1);
+  parser->parse_external("relative_config_imucam", "cam" + std::to_string(0),
+                         "rostopic", topic_camera0);
+  parser->parse_external("relative_config_imucam", "cam" + std::to_string(1),
+                         "rostopic", topic_camera1);
 
   // Location of the ROS bag we want to read in
   std::string path_to_bag;
-  nh->param<std::string>("path_bag", path_to_bag, "/home/patrick/datasets/euroc_mav/V1_01_easy.bag");
-  // nh->param<std::string>("path_bag", path_to_bag, "/home/patrick/datasets/open_vins/aruco_room_01.bag");
+  nh->param<std::string>("path_bag", path_to_bag,
+                         "/home/patrick/datasets/eth/V1_01_easy.bag");
+  // nh->param<std::string>("path_bag", path_to_bag,
+  // "/home/patrick/datasets/open_vins/aruco_room_01.bag");
   PRINT_INFO("ros bag path is: %s\n", path_to_bag.c_str());
 
   // Get our start location and how much of the bag we want to play
@@ -110,21 +111,16 @@ int main(int argc, char **argv) {
   //===================================================================================
   //===================================================================================
 
-  // This will globally set the thread count we will use
-  // -1 will reset to the system default threading (usually the num of cores)
-  cv::setNumThreads(4);
-
   // Parameters for our extractor
-  int num_pts = 200;
+  int num_pts = 400;
   int num_aruco = 1024;
-  int fast_threshold = 20;
-  int grid_x = 5;
-  int grid_y = 3;
+  int fast_threshold = 15;
+  int grid_x = 9;
+  int grid_y = 7;
   int min_px_dist = 10;
   double knn_ratio = 0.70;
   bool do_downsizing = false;
   bool use_stereo = false;
-  parser->parse_config("max_cameras", max_cameras, false);
   parser->parse_config("num_pts", num_pts, false);
   parser->parse_config("num_aruco", num_aruco, false);
   parser->parse_config("clone_states", clone_states, false);
@@ -155,7 +151,6 @@ int main(int argc, char **argv) {
   }
 
   // Debug print!
-  PRINT_DEBUG("max cameras: %d\n", max_cameras);
   PRINT_DEBUG("max features: %d\n", num_pts);
   PRINT_DEBUG("max aruco: %d\n", num_aruco);
   PRINT_DEBUG("clone states: %d\n", clone_states);
@@ -163,23 +158,25 @@ int main(int argc, char **argv) {
   PRINT_DEBUG("fast threshold: %d\n", fast_threshold);
   PRINT_DEBUG("min pixel distance: %d\n", min_px_dist);
   PRINT_DEBUG("downsize aruco image: %d\n", do_downsizing);
-  PRINT_DEBUG("stereo tracking: %d\n", use_stereo);
 
-  // Fake camera info (we don't need this, as we are not using the normalized coordinates for anything)
+  // Fake camera info (we don't need this, as we are not using the normalized
+  // coordinates for anything)
   std::unordered_map<size_t, std::shared_ptr<CamBase>> cameras;
   for (int i = 0; i < 2; i++) {
     Eigen::Matrix<double, 8, 1> cam0_calib;
     cam0_calib << 1, 1, 0, 0, 0, 0, 0, 0;
-    std::shared_ptr<CamBase> camera_calib = std::make_shared<CamRadtan>(100, 100);
+    std::shared_ptr<CamBase> camera_calib =
+        std::make_shared<CamRadtan>(100, 100);
     camera_calib->set_value(cam0_calib);
     cameras.insert({i, camera_calib});
   }
 
   // Lets make a feature extractor
-  extractor = new TrackKLT(cameras, num_pts, num_aruco, use_stereo, method, fast_threshold, grid_x, grid_y, min_px_dist);
-  // extractor = new TrackDescriptor(cameras, num_pts, num_aruco, use_stereo, method, fast_threshold, grid_x, grid_y, min_px_dist,
-  // knn_ratio);
-  // extractor = new TrackAruco(cameras, num_aruco, use_stereo, method, do_downsizing);
+  extractor = new TrackKLT(cameras, num_pts, num_aruco, !use_stereo, method,
+                           fast_threshold, grid_x, grid_y, min_px_dist);
+  // extractor = new TrackDescriptor(cameras, num_pts, num_aruco, !use_stereo,
+  // method, fast_threshold, grid_x, grid_y, min_px_dist, knn_ratio); extractor
+  // = new TrackAruco(cameras, num_aruco, !use_stereo, method, do_downsizing);
 
   //===================================================================================
   //===================================================================================
@@ -199,14 +196,16 @@ int main(int argc, char **argv) {
   view_full.addQuery(bag);
   ros::Time time_init = view_full.getBeginTime();
   time_init += ros::Duration(bag_start);
-  ros::Time time_finish = (bag_durr < 0) ? view_full.getEndTime() : time_init + ros::Duration(bag_durr);
+  ros::Time time_finish = (bag_durr < 0) ? view_full.getEndTime()
+                                         : time_init + ros::Duration(bag_durr);
   PRINT_DEBUG("time start = %.6f\n", time_init.toSec());
   PRINT_DEBUG("time end   = %.6f\n", time_finish.toSec());
   view.addQuery(bag, time_init, time_finish);
 
   // Check to make sure we have data to play
   if (view.size() == 0) {
-    PRINT_ERROR(RED "No messages to play on specified topics. Exiting.\n" RESET);
+    PRINT_ERROR(RED
+                "No messages to play on specified topics. Exiting.\n" RESET);
     ros::shutdown();
     return EXIT_FAILURE;
   }
@@ -278,9 +277,6 @@ int main(int argc, char **argv) {
   return EXIT_SUCCESS;
 }
 
-/**
- * This function will process the new stereo pair with the extractor!
- */
 void handle_stereo(double time0, double time1, cv::Mat img0, cv::Mat img1) {
 
   // Animate our dynamic mask moving
@@ -305,13 +301,11 @@ void handle_stereo(double time0, double time1, cv::Mat img0, cv::Mat img1) {
   ov_core::CameraData message;
   message.timestamp = time0;
   message.sensor_ids.push_back(0);
+  message.sensor_ids.push_back(1);
   message.images.push_back(img0);
+  message.images.push_back(img1);
   message.masks.push_back(mask);
-  if (max_cameras == 2) {
-    message.sensor_ids.push_back(1);
-    message.images.push_back(img1);
-    message.masks.push_back(mask);
-  }
+  message.masks.push_back(mask);
   extractor->feed_new_camera(message);
 
   // Display the resulting tracks
@@ -326,7 +320,8 @@ void handle_stereo(double time0, double time1, cv::Mat img0, cv::Mat img1) {
 
   // Get lost tracks
   std::shared_ptr<FeatureDatabase> database = extractor->get_feature_database();
-  std::vector<std::shared_ptr<Feature>> feats_lost = database->features_not_containing_newer(time0);
+  std::vector<std::shared_ptr<Feature>> feats_lost =
+      database->features_not_containing_newer(time0);
   num_lostfeats += feats_lost.size();
 
   // Mark theses feature pointers as deleted
@@ -349,7 +344,8 @@ void handle_stereo(double time0, double time1, cv::Mat img0, cv::Mat img1) {
     // Remove features that have reached their max track length
     double margtime = clonetimes.at(0);
     clonetimes.pop_front();
-    std::vector<std::shared_ptr<Feature>> feats_marg = database->features_containing(margtime);
+    std::vector<std::shared_ptr<Feature>> feats_marg =
+        database->features_containing(margtime);
     num_margfeats += feats_marg.size();
     // Delete theses feature pointers
     for (size_t i = 0; i < feats_marg.size(); i++) {
@@ -371,7 +367,9 @@ void handle_stereo(double time0, double time1, cv::Mat img0, cv::Mat img1) {
     double fpf = (double)featslengths / num_lostfeats;
     double mpf = (double)num_margfeats / frames;
     // DEBUG PRINT OUT
-    PRINT_DEBUG("fps = %.2f | lost_feats/frame = %.2f | track_length/lost_feat = %.2f | marg_tracks/frame = %.2f\n", fps, lpf, fpf, mpf);
+    PRINT_DEBUG("fps = %.2f | lost_feats/frame = %.2f | track_length/lost_feat "
+                "= %.2f | marg_tracks/frame = %.2f\n",
+                fps, lpf, fpf, mpf);
     // Reset variables
     frames = 0;
     time_start = time_curr;

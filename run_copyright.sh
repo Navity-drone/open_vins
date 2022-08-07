@@ -42,6 +42,3 @@ find . -regex '.*\.\(cpp\|hpp\|cu\|c\|h\)' \
     echo $file;
     cat /tmp/out_copy $file > /tmp/out && mv /tmp/out $file
   done
-
-
-

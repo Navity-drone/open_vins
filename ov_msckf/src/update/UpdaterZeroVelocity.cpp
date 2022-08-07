@@ -19,48 +19,16 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+
+
 #include "UpdaterZeroVelocity.h"
-
-#include "feat/FeatureDatabase.h"
-#include "feat/FeatureHelper.h"
-#include "state/Propagator.h"
-#include "state/State.h"
-#include "state/StateHelper.h"
-#include "utils/colors.h"
-#include "utils/print.h"
-#include "utils/quat_ops.h"
-
-#include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/math/distributions/chi_squared.hpp>
 
 using namespace ov_core;
 using namespace ov_type;
 using namespace ov_msckf;
 
-UpdaterZeroVelocity::UpdaterZeroVelocity(UpdaterOptions &options, NoiseManager &noises, std::shared_ptr<ov_core::FeatureDatabase> db,
-                                         std::shared_ptr<Propagator> prop, double gravity_mag, double zupt_max_velocity,
-                                         double zupt_noise_multiplier, double zupt_max_disparity)
-    : _options(options), _noises(noises), _db(db), _prop(prop), _zupt_max_velocity(zupt_max_velocity),
-      _zupt_noise_multiplier(zupt_noise_multiplier), _zupt_max_disparity(zupt_max_disparity) {
-
-  // Gravity
-  _gravity << 0.0, 0.0, gravity_mag;
-
-  // Save our raw pixel noise squared
-  _noises.sigma_w_2 = std::pow(_noises.sigma_w, 2);
-  _noises.sigma_a_2 = std::pow(_noises.sigma_a, 2);
-  _noises.sigma_wb_2 = std::pow(_noises.sigma_wb, 2);
-  _noises.sigma_ab_2 = std::pow(_noises.sigma_ab, 2);
-
-  // Initialize the chi squared test table with confidence level 0.95
-  // https://github.com/KumarRobotics/msckf_vio/blob/050c50defa5a7fd9a04c1eed5687b405f02919b5/src/msckf_vio.cpp#L215-L221
-  for (int i = 1; i < 1000; i++) {
-    boost::math::chi_squared chi_squared_dist(i);
-    chi_squared_table[i] = boost::math::quantile(chi_squared_dist, 0.95);
-  }
-}
-
-bool UpdaterZeroVelocity::try_update(std::shared_ptr<State> state, double timestamp) {
+bool UpdaterZeroVelocity::try_update(std::shared_ptr<State> state,
+                                     double timestamp) {
 
   // Return if we don't have any imu data yet
   if (imu_data.empty()) {
@@ -92,14 +60,16 @@ bool UpdaterZeroVelocity::try_update(std::shared_ptr<State> state, double timest
   double time1 = timestamp + t_off_new;
 
   // Select bounding inertial measurements
-  std::vector<ov_core::ImuData> imu_recent = Propagator::select_imu_readings(imu_data, time0, time1);
+  std::vector<ov_core::ImuData> imu_recent =
+      Propagator::select_imu_readings(imu_data, time0, time1);
 
   // Move forward in time
   last_prop_time_offset = t_off_new;
 
   // Check that we have at least one measurement to propagate with
   if (imu_recent.size() < 2) {
-    PRINT_WARNING(RED "[ZUPT]: There are no IMU data to check for zero velocity with!!\n" RESET);
+    PRINT_WARNING(RED "[ZUPT]: There are no IMU data to check for zero "
+                      "velocity with!!\n" RESET);
     last_zupt_state_timestamp = 0.0;
     return false;
   }
@@ -141,21 +111,26 @@ bool UpdaterZeroVelocity::try_update(std::shared_ptr<State> state, double timest
     Eigen::Vector3d a_hat = imu_recent.at(i).am - state->_imu->bias_a();
 
     // Measurement residual (true value is zero)
-    res.block(6 * i + 0, 0, 3, 1) = -(imu_recent.at(i).wm - state->_imu->bias_g());
+    res.block(6 * i + 0, 0, 3, 1) =
+        -(imu_recent.at(i).wm - state->_imu->bias_g());
     if (!integrated_accel_constraint) {
       res.block(6 * i + 3, 0, 3, 1) = -(a_hat - state->_imu->Rot() * _gravity);
     } else {
-      res.block(6 * i + 3, 0, 3, 1) = -(state->_imu->vel() - _gravity * dt + state->_imu->Rot().transpose() * a_hat * dt);
+      res.block(6 * i + 3, 0, 3, 1) =
+          -(state->_imu->vel() - _gravity * dt +
+            state->_imu->Rot().transpose() * a_hat * dt);
     }
 
     // Measurement Jacobian
-    Eigen::Matrix3d R_GtoI_jacob = (state->_options.do_fej) ? state->_imu->Rot_fej() : state->_imu->Rot();
+    Eigen::Matrix3d R_GtoI_jacob =
+        (state->_options.do_fej) ? state->_imu->Rot_fej() : state->_imu->Rot();
     H.block(6 * i + 0, 3, 3, 3) = -Eigen::Matrix3d::Identity();
     if (!integrated_accel_constraint) {
       H.block(6 * i + 3, 0, 3, 3) = -skew_x(R_GtoI_jacob * _gravity);
       H.block(6 * i + 3, 6, 3, 3) = -Eigen::Matrix3d::Identity();
     } else {
-      H.block(6 * i + 3, 0, 3, 3) = -R_GtoI_jacob.transpose() * skew_x(a_hat) * dt;
+      H.block(6 * i + 3, 0, 3, 3) =
+          -R_GtoI_jacob.transpose() * skew_x(a_hat) * dt;
       H.block(6 * i + 3, 6, 3, 3) = -R_GtoI_jacob.transpose() * dt;
       H.block(6 * i + 3, 9, 3, 3) = Eigen::Matrix3d::Identity();
     }
@@ -172,7 +147,8 @@ bool UpdaterZeroVelocity::try_update(std::shared_ptr<State> state, double timest
   }
 
   // Multiply our noise matrix by a fixed amount
-  // We typically need to treat the IMU as being "worst" to detect / not become over confident
+  // We typically need to treat the IMU as being "worst" to detect / not become
+  // over confident
   R *= _zupt_noise_multiplier;
 
   // Next propagate the biases forward in time
@@ -182,21 +158,26 @@ bool UpdaterZeroVelocity::try_update(std::shared_ptr<State> state, double timest
   Q_bias.block(3, 3, 3, 3) *= dt_summed * _noises.sigma_ab;
 
   // Chi2 distance check
-  // NOTE: we also append the propagation we "would do before the update" if this was to be accepted
-  // NOTE: we don't propagate first since if we fail the chi2 then we just want to return and do normal logic
-  Eigen::MatrixXd P_marg = StateHelper::get_marginal_covariance(state, Hx_order);
+  // NOTE: we also append the propagation we "would do before the update" if
+  // this was to be accepted NOTE: we don't propagate first since if we fail the
+  // chi2 then we just want to return and do normal logic
+  Eigen::MatrixXd P_marg =
+      StateHelper::get_marginal_covariance(state, Hx_order);
   P_marg.block(3, 3, 6, 6) += Q_bias;
   Eigen::MatrixXd S = H * P_marg * H.transpose() + R;
   double chi2 = res.dot(S.llt().solve(res));
 
-  // Get our threshold (we precompute up to 1000 but handle the case that it is more)
+  // Get our threshold (we precompute up to 1000 but handle the case that it is
+  // more)
   double chi2_check;
   if (res.rows() < 1000) {
     chi2_check = chi_squared_table[res.rows()];
   } else {
     boost::math::chi_squared chi_squared_dist(res.rows());
     chi2_check = boost::math::quantile(chi_squared_dist, 0.95);
-    PRINT_WARNING(YELLOW "[ZUPT]: chi2_check over the residual limit - %d\n" RESET, (int)res.rows());
+    PRINT_WARNING(YELLOW
+                  "[ZUPT]: chi2_check over the residual limit - %d\n" RESET,
+                  (int)res.rows());
   }
 
   // Check if the image disparity
@@ -209,41 +190,51 @@ bool UpdaterZeroVelocity::try_update(std::shared_ptr<State> state, double timest
     int num_features = 0;
     double average_disparity = 0.0;
     double variance_disparity = 0.0;
-    FeatureHelper::compute_disparity(_db, time0_cam, time1_cam, average_disparity, variance_disparity, num_features);
+    FeatureHelper::compute_disparity(_db, time0_cam, time1_cam,
+                                     average_disparity, variance_disparity,
+                                     num_features);
 
     // Check if this disparity is enough to be classified as moving
-    disparity_passed = (average_disparity < _zupt_max_disparity && num_features > 20);
+    disparity_passed =
+        (average_disparity < _zupt_max_disparity && num_features > 20);
     if (disparity_passed) {
-      PRINT_INFO(CYAN "[ZUPT]: passed disparity (%.3f < %.3f, %d features)\n" RESET, average_disparity, _zupt_max_disparity,
-                 (int)num_features);
+      PRINT_INFO(CYAN
+                 "[ZUPT]: passed disparity (%.3f < %.3f, %d features)\n" RESET,
+                 average_disparity, _zupt_max_disparity, (int)num_features);
     } else {
-      PRINT_DEBUG(YELLOW "[ZUPT]: failed disparity (%.3f > %.3f, %d features)\n" RESET, average_disparity, _zupt_max_disparity,
-                  (int)num_features);
+      PRINT_DEBUG(YELLOW
+                  "[ZUPT]: failed disparity (%.3f > %.3f, %d features)\n" RESET,
+                  average_disparity, _zupt_max_disparity, (int)num_features);
     }
   }
 
   // Check if we are currently zero velocity
   // We need to pass the chi2 and not be above our velocity threshold
-  if (!disparity_passed && (chi2 > _options.chi2_multipler * chi2_check || state->_imu->vel().norm() > _zupt_max_velocity)) {
+  if (!disparity_passed && (chi2 > _options.chi2_multipler * chi2_check ||
+                            state->_imu->vel().norm() > _zupt_max_velocity)) {
     last_zupt_state_timestamp = 0.0;
-    PRINT_DEBUG(YELLOW "[ZUPT]: rejected |v_IinG| = %.3f (chi2 %.3f > %.3f)\n" RESET, state->_imu->vel().norm(), chi2,
-                _options.chi2_multipler * chi2_check);
+    PRINT_DEBUG(
+        YELLOW "[ZUPT]: rejected |v_IinG| = %.3f (chi2 %.3f > %.3f)\n" RESET,
+        state->_imu->vel().norm(), chi2, _options.chi2_multipler * chi2_check);
     return false;
   }
-  PRINT_INFO(CYAN "[ZUPT]: accepted |v_IinG| = %.3f (chi2 %.3f < %.3f)\n" RESET, state->_imu->vel().norm(), chi2,
+  PRINT_INFO(CYAN "[ZUPT]: accepted |v_IinG| = %.3f (chi2 %.3f < %.3f)\n" RESET,
+             state->_imu->vel().norm(), chi2,
              _options.chi2_multipler * chi2_check);
 
   // Do our update, only do this update if we have previously detected
-  // If we have succeeded, then we should remove the current timestamp feature tracks
-  // This is because we will not clone at this timestep and instead do our zero velocity update
-  // We want to keep the tracks from the previous timestep, thus only delete measurements from the current timestep
+  // If we have succeeded, then we should remove the current timestamp feature
+  // tracks This is because we will not clone at this timestep and instead do
+  // our zero velocity update We want to keep the tracks from the previous
+  // timestep, thus only delete measurements from the current timestep
   if (last_zupt_state_timestamp > 0.0) {
     _db->cleanup_measurements_exact(last_zupt_state_timestamp);
   }
 
   // Else we are good, update the system
   // 1) update with our IMU measurements directly
-  // 2) propagate and then explicitly say that our ori, pos, and vel should be zero
+  // 2) propagate and then explicitly say that our ori, pos, and vel should be
+  // zero
   if (!explicitly_enforce_zero_motion) {
 
     // Next propagate the biases forward in time
@@ -253,7 +244,8 @@ bool UpdaterZeroVelocity::try_update(std::shared_ptr<State> state, double timest
       std::vector<std::shared_ptr<Type>> Phi_order;
       Phi_order.push_back(state->_imu->bg());
       Phi_order.push_back(state->_imu->ba());
-      StateHelper::EKFPropagation(state, Phi_order, Phi_order, Phi_bias, Q_bias);
+      StateHelper::EKFPropagation(state, Phi_order, Phi_order, Phi_bias,
+                                  Q_bias);
     }
 
     // Finally move the state time forward

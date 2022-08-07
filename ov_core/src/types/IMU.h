@@ -19,6 +19,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+
+
 #ifndef OV_TYPE_TYPE_IMU_H
 #define OV_TYPE_TYPE_IMU_H
 
@@ -27,13 +29,6 @@
 
 namespace ov_type {
 
-/**
- * @brief Derived Type class that implements an IMU state
- *
- * Contains a PoseJPL, Vec velocity, Vec gyro bias, and Vec accel bias.
- * This should be similar to that of the standard MSCKF state besides the ordering.
- * The pose is first, followed by velocity, etc.
- */
 class IMU : public Type {
 
 public:
@@ -70,10 +65,12 @@ public:
   }
 
   /**
-   * @brief Performs update operation using JPLQuat update for orientation, then vector updates for
-   * position, velocity, gyro bias, and accel bias (in that order).
+   * @brief Performs update operation using JPLQuat update for orientation, then
+   * vector updates for position, velocity, gyro bias, and accel bias (in that
+   * order).
    *
-   * @param dx 15 DOF vector encoding update using the following order (q, p, v, bg, ba)
+   * @param dx 15 DOF vector encoding update using the following order (q, p, v,
+   * bg, ba)
    */
   void update(const Eigen::VectorXd &dx) override {
 
@@ -99,13 +96,17 @@ public:
    * @brief Sets the value of the estimate
    * @param new_value New value we should set
    */
-  void set_value(const Eigen::MatrixXd &new_value) override { set_value_internal(new_value); }
+  void set_value(const Eigen::MatrixXd &new_value) override {
+    set_value_internal(new_value);
+  }
 
   /**
    * @brief Sets the value of the first estimate
    * @param new_value New value we should set
    */
-  void set_fej(const Eigen::MatrixXd &new_value) override { set_fej_internal(new_value); }
+  void set_fej(const Eigen::MatrixXd &new_value) override {
+    set_fej_internal(new_value);
+  }
 
   std::shared_ptr<Type> clone() override {
     auto Clone = std::shared_ptr<Type>(new IMU());
@@ -114,7 +115,8 @@ public:
     return Clone;
   }
 
-  std::shared_ptr<Type> check_if_subvariable(const std::shared_ptr<Type> check) override {
+  std::shared_ptr<Type>
+  check_if_subvariable(const std::shared_ptr<Type> check) override {
     if (check == _pose) {
       return _pose;
     } else if (check == _pose->check_if_subvariable(check)) {

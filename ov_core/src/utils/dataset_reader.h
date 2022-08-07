@@ -19,6 +19,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+
+
 #ifndef OV_CORE_DATASET_READER_H
 #define OV_CORE_DATASET_READER_H
 
@@ -35,18 +37,6 @@ using namespace std;
 
 namespace ov_core {
 
-/**
- * @brief Helper functions to read in dataset files
- *
- * This file has some nice functions for reading dataset files.
- * One of the main datasets that we test against is the EuRoC MAV dataset.
- * We have some nice utility functions here that handle loading of the groundtruth data.
- * This can be used to initialize the system or for plotting and calculation of RMSE values without needing any alignment.
- *
- * > M. Burri, J. Nikolic, P. Gohl, T. Schneider, J. Rehder, S. Omari,M. Achtelik and R. Siegwart,
- * > "The EuRoC micro aerial vehicle datasets", International Journal of Robotic Research, DOI: 10.1177/0278364915620033, 2016.
- * > https://projects.asl.ethz.ch/datasets/doku.php?id=kmavvisualinertialdatasets.
- */
 class DatasetReader {
 
 public:
@@ -55,11 +45,14 @@ public:
    * @param path Path to the CSV file of groundtruth data
    * @param gt_states Will be filled with groundtruth states
    *
-   * Here we will try to load a groundtruth file that is in the ASL/EUROCMAV format.
-   * If we can't open the file, or it is in the wrong format we will error and exit the program.
-   * See get_gt_state() for a way to get the groundtruth state at a given timestep
+   * Here we will try to load a groundtruth file that is in the ASL/EUROCMAV
+   * format. If we can't open the file, or it is in the wrong format we will
+   * error and exit the program. See get_gt_state() for a way to get the
+   * groundtruth state at a given timestep
    */
-  static void load_gt_file(std::string path, std::map<double, Eigen::Matrix<double, 17, 1>> &gt_states) {
+  static void
+  load_gt_file(std::string path,
+               std::map<double, Eigen::Matrix<double, 17, 1>> &gt_states) {
 
     // Clear any old data
     gt_states.clear();
@@ -107,16 +100,20 @@ public:
   /**
    * @brief Gets the 17x1 groundtruth state at a given timestep
    * @param timestep timestep we want to get the groundtruth for
-   * @param imustate groundtruth state [time(sec),q_GtoI,p_IinG,v_IinG,b_gyro,b_accel]
-   * @param gt_states Should be loaded with groundtruth states, see load_gt_file() for details
+   * @param imustate groundtruth state
+   * [time(sec),q_GtoI,p_IinG,v_IinG,b_gyro,b_accel]
+   * @param gt_states Should be loaded with groundtruth states, see
+   * load_gt_file() for details
    * @return true if we found the state, false otherwise
    */
-  static bool get_gt_state(double timestep, Eigen::Matrix<double, 17, 1> &imustate,
-                           std::map<double, Eigen::Matrix<double, 17, 1>> &gt_states) {
+  static bool
+  get_gt_state(double timestep, Eigen::Matrix<double, 17, 1> &imustate,
+               std::map<double, Eigen::Matrix<double, 17, 1>> &gt_states) {
 
     // Check that we even have groundtruth loaded
     if (gt_states.empty()) {
-      PRINT_ERROR(RED "Groundtruth data loaded is empty, make sure you call load before asking for a state.\n" RESET);
+      PRINT_ERROR(RED "Groundtruth data loaded is empty, make sure you call "
+                      "load before asking for a state.\n" RESET);
       return false;
     }
 
@@ -139,7 +136,9 @@ public:
 
     // Check that we have the timestamp in our GT file
     if (gt_states.find(timestep) == gt_states.end()) {
-      PRINT_WARNING(YELLOW "Unable to find %.6f timestamp in GT file, wrong GT file loaded???\n" RESET, timestep);
+      PRINT_WARNING(YELLOW "Unable to find %.6f timestamp in GT file, wrong GT "
+                           "file loaded???\n" RESET,
+                    timestep);
       return false;
     }
 
@@ -172,15 +171,19 @@ public:
   /**
    * @brief This will load the trajectory into memory (space separated)
    * @param path Path to the trajectory file that we want to read in.
-   * @param traj_data Will be filled with groundtruth states (timestamp(s), q_GtoI, p_IinG)
+   * @param traj_data Will be filled with groundtruth states (timestamp(s),
+   * q_GtoI, p_IinG)
    */
-  static void load_simulated_trajectory(std::string path, std::vector<Eigen::VectorXd> &traj_data) {
+  static void
+  load_simulated_trajectory(std::string path,
+                            std::vector<Eigen::VectorXd> &traj_data) {
 
     // Try to open our groundtruth file
     std::ifstream file;
     file.open(path);
     if (!file) {
-      PRINT_ERROR(RED "ERROR: Unable to open simulation trajectory file...\n" RESET);
+      PRINT_ERROR(
+          RED "ERROR: Unable to open simulation trajectory file...\n" RESET);
       PRINT_ERROR(RED "ERROR: %s\n" RESET, path.c_str());
       std::exit(EXIT_FAILURE);
     }
@@ -228,7 +231,8 @@ public:
 
     // Error if we don't have any data
     if (traj_data.empty()) {
-      PRINT_ERROR(RED "ERROR: Could not parse any data from the file!!\n" RESET);
+      PRINT_ERROR(RED
+                  "ERROR: Could not parse any data from the file!!\n" RESET);
       PRINT_ERROR(RED "ERROR: %s\n" RESET, path.c_str());
       std::exit(EXIT_FAILURE);
     }

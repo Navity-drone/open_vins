@@ -19,6 +19,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+
+
 #ifndef OV_MSCKF_STATE_OPTIONS_H
 #define OV_MSCKF_STATE_OPTIONS_H
 
@@ -30,9 +32,6 @@
 
 namespace ov_msckf {
 
-/**
- * @brief Struct which stores all our filter options
- */
 struct StateOptions {
 
   /// Bool to determine whether or not to do first estimate Jacobians
@@ -59,7 +58,8 @@ struct StateOptions {
   /// Max number of estimated SLAM features
   int max_slam_features = 25;
 
-  /// Max number of SLAM features we allow to be included in a single EKF update.
+  /// Max number of SLAM features we allow to be included in a single EKF
+  /// update.
   int max_slam_in_update = 1000;
 
   /// Max number of MSCKF features we will use at a given image timestep.
@@ -72,13 +72,16 @@ struct StateOptions {
   int num_cameras = 1;
 
   /// What representation our features are in (msckf features)
-  ov_type::LandmarkRepresentation::Representation feat_rep_msckf = ov_type::LandmarkRepresentation::Representation::GLOBAL_3D;
+  ov_type::LandmarkRepresentation::Representation feat_rep_msckf =
+      ov_type::LandmarkRepresentation::Representation::GLOBAL_3D;
 
   /// What representation our features are in (slam features)
-  ov_type::LandmarkRepresentation::Representation feat_rep_slam = ov_type::LandmarkRepresentation::Representation::GLOBAL_3D;
+  ov_type::LandmarkRepresentation::Representation feat_rep_slam =
+      ov_type::LandmarkRepresentation::Representation::GLOBAL_3D;
 
   /// What representation our features are in (aruco tag features)
-  ov_type::LandmarkRepresentation::Representation feat_rep_aruco = ov_type::LandmarkRepresentation::Representation::GLOBAL_3D;
+  ov_type::LandmarkRepresentation::Representation feat_rep_aruco =
+      ov_type::LandmarkRepresentation::Representation::GLOBAL_3D;
 
   /// Nice print function of what parameters we have loaded
   void print(const std::shared_ptr<ov_core::YamlParser> &parser = nullptr) {
@@ -95,13 +98,16 @@ struct StateOptions {
       parser->parse_config("max_msckf_in_update", max_msckf_in_update);
       parser->parse_config("num_aruco", max_aruco_features);
       parser->parse_config("max_cameras", num_cameras);
-      std::string rep1 = ov_type::LandmarkRepresentation::as_string(feat_rep_msckf);
+      std::string rep1 =
+          ov_type::LandmarkRepresentation::as_string(feat_rep_msckf);
       parser->parse_config("feat_rep_msckf", rep1);
       feat_rep_msckf = ov_type::LandmarkRepresentation::from_string(rep1);
-      std::string rep2 = ov_type::LandmarkRepresentation::as_string(feat_rep_slam);
+      std::string rep2 =
+          ov_type::LandmarkRepresentation::as_string(feat_rep_slam);
       parser->parse_config("feat_rep_slam", rep2);
       feat_rep_slam = ov_type::LandmarkRepresentation::from_string(rep2);
-      std::string rep3 = ov_type::LandmarkRepresentation::as_string(feat_rep_aruco);
+      std::string rep3 =
+          ov_type::LandmarkRepresentation::as_string(feat_rep_aruco);
       parser->parse_config("feat_rep_aruco", rep3);
       feat_rep_aruco = ov_type::LandmarkRepresentation::from_string(rep3);
     }
@@ -117,9 +123,15 @@ struct StateOptions {
     PRINT_DEBUG("  - max_msckf_in_update: %d\n", max_msckf_in_update);
     PRINT_DEBUG("  - max_aruco: %d\n", max_aruco_features);
     PRINT_DEBUG("  - max_cameras: %d\n", num_cameras);
-    PRINT_DEBUG("  - feat_rep_msckf: %s\n", ov_type::LandmarkRepresentation::as_string(feat_rep_msckf).c_str());
-    PRINT_DEBUG("  - feat_rep_slam: %s\n", ov_type::LandmarkRepresentation::as_string(feat_rep_slam).c_str());
-    PRINT_DEBUG("  - feat_rep_aruco: %s\n", ov_type::LandmarkRepresentation::as_string(feat_rep_aruco).c_str());
+    PRINT_DEBUG(
+        "  - feat_rep_msckf: %s\n",
+        ov_type::LandmarkRepresentation::as_string(feat_rep_msckf).c_str());
+    PRINT_DEBUG(
+        "  - feat_rep_slam: %s\n",
+        ov_type::LandmarkRepresentation::as_string(feat_rep_slam).c_str());
+    PRINT_DEBUG(
+        "  - feat_rep_aruco: %s\n",
+        ov_type::LandmarkRepresentation::as_string(feat_rep_aruco).c_str());
   }
 };
 

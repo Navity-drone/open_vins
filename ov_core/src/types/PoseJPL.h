@@ -19,6 +19,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+
+
 #ifndef OV_TYPE_TYPE_POSEJPL_H
 #define OV_TYPE_TYPE_POSEJPL_H
 
@@ -28,12 +30,6 @@
 
 namespace ov_type {
 
-/**
- * @brief Derived Type class that implements a 6 d.o.f pose
- *
- * Internally we use a JPLQuat quaternion representation for the orientation and 3D Vec position.
- * Please see JPLQuat for details on its update procedure and its left multiplicative error.
- */
 class PoseJPL : public Type {
 
 public:
@@ -67,7 +63,8 @@ public:
   }
 
   /**
-   * @brief Update q and p using a the JPLQuat update for orientation and vector update for position
+   * @brief Update q and p using a the JPLQuat update for orientation and vector
+   * update for position
    *
    * @param dx Correction vector (orientation then position)
    */
@@ -94,13 +91,17 @@ public:
    * @brief Sets the value of the estimate
    * @param new_value New value we should set
    */
-  void set_value(const Eigen::MatrixXd &new_value) override { set_value_internal(new_value); }
+  void set_value(const Eigen::MatrixXd &new_value) override {
+    set_value_internal(new_value);
+  }
 
   /**
    * @brief Sets the value of the first estimate
    * @param new_value New value we should set
    */
-  void set_fej(const Eigen::MatrixXd &new_value) override { set_fej_internal(new_value); }
+  void set_fej(const Eigen::MatrixXd &new_value) override {
+    set_fej_internal(new_value);
+  }
 
   std::shared_ptr<Type> clone() override {
     auto Clone = std::shared_ptr<PoseJPL>(new PoseJPL());
@@ -109,7 +110,8 @@ public:
     return Clone;
   }
 
-  std::shared_ptr<Type> check_if_subvariable(const std::shared_ptr<Type> check) override {
+  std::shared_ptr<Type>
+  check_if_subvariable(const std::shared_ptr<Type> check) override {
     if (check == _q) {
       return _q;
     } else if (check == _p) {

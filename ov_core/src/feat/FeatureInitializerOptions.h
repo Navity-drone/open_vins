@@ -19,6 +19,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+
+
 #ifndef OV_CORE_INITIALIZEROPTIONS_H
 #define OV_CORE_INITIALIZEROPTIONS_H
 
@@ -27,9 +29,6 @@
 
 namespace ov_core {
 
-/**
- * @brief Struct which stores all our feature initializer options
- */
 struct FeatureInitializerOptions {
 
   /// If we should perform 1d triangulation instead of 3d
@@ -65,7 +64,8 @@ struct FeatureInitializerOptions {
   /// Max baseline ratio to accept triangulated features
   double max_baseline = 40;
 
-  /// Max condition number of linear triangulation matrix accept triangulated features
+  /// Max condition number of linear triangulation matrix accept triangulated
+  /// features
   double max_cond_number = 10000;
 
   /// Nice print function of what parameters we have loaded

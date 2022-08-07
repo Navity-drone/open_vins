@@ -19,6 +19,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+
+
 #ifndef OV_TYPE_TYPE_BASE_H
 #define OV_TYPE_TYPE_BASE_H
 
@@ -27,20 +29,14 @@
 
 namespace ov_type {
 
-/**
- * @brief Base class for estimated variables.
- *
- * This class is used how variables are represented or updated (e.g., vectors or quaternions).
- * Each variable is defined by its error state size and its location in the covariance matrix.
- * We additionally require all sub-types to have a update procedure.
- */
 class Type {
 
 public:
   /**
    * @brief Default constructor for our Type
    *
-   * @param size_ degrees of freedom of variable (i.e., the size of the error state)
+   * @param size_ degrees of freedom of variable (i.e., the size of the error
+   * state)
    */
   Type(int size_) { _size = size_; }
 
@@ -49,8 +45,9 @@ public:
   /**
    * @brief Sets id used to track location of variable in the filter covariance
    *
-   * Note that the minimum ID is -1 which says that the state is not in our covariance.
-   * If the ID is larger than -1 then this is the index location in the covariance matrix.
+   * Note that the minimum ID is -1 which says that the state is not in our
+   * covariance. If the ID is larger than -1 then this is the index location in
+   * the covariance matrix.
    *
    * @param new_id entry in filter covariance corresponding to this variable
    */
@@ -69,7 +66,8 @@ public:
   /**
    * @brief Update variable due to perturbation of error state
    *
-   * @param dx Perturbation used to update the variable through a defined "boxplus" operation
+   * @param dx Perturbation used to update the variable through a defined
+   * "boxplus" operation
    */
   virtual void update(const Eigen::VectorXd &dx) = 0;
 
@@ -111,12 +109,16 @@ public:
   /**
    * @brief Determine if pass variable is a sub-variable
    *
-   * If the passed variable is a sub-variable or the current variable this will return it.
-   * Otherwise it will return a nullptr, meaning that it was unable to be found.
+   * If the passed variable is a sub-variable or the current variable this will
+   * return it. Otherwise it will return a nullptr, meaning that it was unable
+   * to be found.
    *
    * @param check Type pointer to compare our subvariables to
    */
-  virtual std::shared_ptr<Type> check_if_subvariable(const std::shared_ptr<Type> check) { return nullptr; }
+  virtual std::shared_ptr<Type>
+  check_if_subvariable(const std::shared_ptr<Type> check) {
+    return nullptr;
+  }
 
 protected:
   /// First-estimate

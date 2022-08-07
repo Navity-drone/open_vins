@@ -19,6 +19,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+
+
 #ifndef OV_MSCKF_UPDATER_OPTIONS_H
 #define OV_MSCKF_UPDATER_OPTIONS_H
 
@@ -26,9 +28,6 @@
 
 namespace ov_msckf {
 
-/**
- * @brief Struct which stores general updater options
- */
 struct UpdaterOptions {
 
   /// What chi-squared multipler we should apply

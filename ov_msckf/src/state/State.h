@@ -19,6 +19,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+
+
 #ifndef OV_MSCKF_STATE_H
 #define OV_MSCKF_STATE_H
 
@@ -37,14 +39,6 @@
 
 namespace ov_msckf {
 
-/**
- * @brief State of our filter
- *
- * This state has all the current estimates for the filter.
- * This system is modeled after the MSCKF filter, thus we have a sliding window of clones.
- * We additionally have more parameters for online estimation of calibration and SLAM features.
- * We also have the covariance of the system, which should be managed using the StateHelper class.
- */
 class State {
 
 public:
@@ -58,8 +52,9 @@ public:
 
   /**
    * @brief Will return the timestep that we will marginalize next.
-   * As of right now, since we are using a sliding window, this is the oldest clone.
-   * But if you wanted to do a keyframe system, you could selectively marginalize clones.
+   * As of right now, since we are using a sliding window, this is the oldest
+   * clone. But if you wanted to do a keyframe system, you could selectively
+   * marginalize clones.
    * @return timestep of clone we will marginalize
    */
   double margtimestep() {
@@ -103,12 +98,14 @@ public:
   std::unordered_map<size_t, std::shared_ptr<ov_type::Vec>> _cam_intrinsics;
 
   /// Camera intrinsics camera objects
-  std::unordered_map<size_t, std::shared_ptr<ov_core::CamBase>> _cam_intrinsics_cameras;
+  std::unordered_map<size_t, std::shared_ptr<ov_core::CamBase>>
+      _cam_intrinsics_cameras;
 
 private:
   // Define that the state helper is a friend class of this class
-  // This will allow it to access the below functions which should normally not be called
-  // This prevents a developer from thinking that the "insert clone" will actually correctly add it to the covariance
+  // This will allow it to access the below functions which should normally not
+  // be called This prevents a developer from thinking that the "insert clone"
+  // will actually correctly add it to the covariance
   friend class StateHelper;
 
   /// Covariance of all active variables

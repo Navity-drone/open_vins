@@ -19,6 +19,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+
+
 #ifndef OV_TYPE_LANDMARKREPRESENTATION_H
 #define OV_TYPE_LANDMARKREPRESENTATION_H
 
@@ -26,9 +28,6 @@
 
 namespace ov_type {
 
-/**
- * @brief Class has useful feature representation types
- */
 class LandmarkRepresentation {
 
 public:
@@ -73,7 +72,8 @@ public:
    * @param feat_representation String we want to find the enum of
    * @return Representation, will be "unknown" if we coun't parse it
    */
-  static inline Representation from_string(const std::string &feat_representation) {
+  static inline Representation
+  from_string(const std::string &feat_representation) {
     if (feat_representation == "GLOBAL_3D")
       return GLOBAL_3D;
     if (feat_representation == "GLOBAL_FULL_INVERSE_DEPTH")
@@ -90,14 +90,18 @@ public:
   }
 
   /**
-   * @brief Helper function that checks if the passed feature representation is a relative or global
+   * @brief Helper function that checks if the passed feature representation is
+   * a relative or global
    * @param feat_representation Representation we want to check
    * @return True if it is a relative representation
    */
-  static inline bool is_relative_representation(Representation feat_representation) {
-    return (feat_representation == Representation::ANCHORED_3D || feat_representation == Representation::ANCHORED_FULL_INVERSE_DEPTH ||
-            feat_representation == Representation::ANCHORED_MSCKF_INVERSE_DEPTH ||
-            feat_representation == Representation::ANCHORED_INVERSE_DEPTH_SINGLE);
+  static inline bool
+  is_relative_representation(Representation feat_representation) {
+    return (
+        feat_representation == Representation::ANCHORED_3D ||
+        feat_representation == Representation::ANCHORED_FULL_INVERSE_DEPTH ||
+        feat_representation == Representation::ANCHORED_MSCKF_INVERSE_DEPTH ||
+        feat_representation == Representation::ANCHORED_INVERSE_DEPTH_SINGLE);
   }
 
 private:

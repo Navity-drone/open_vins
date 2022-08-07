@@ -13,6 +13,8 @@ find_package(cv_bridge REQUIRED)
 find_package(image_transport REQUIRED)
 find_package(ov_core REQUIRED)
 find_package(ov_init REQUIRED)
+find_package(px4_msgs REQUIRED)
+
 
 # Describe ROS project
 option(ENABLE_ROS "Enable or disable building with ROS (if it is found)" ON)
@@ -38,7 +40,7 @@ list(APPEND thirdparty_libraries
 list(APPEND ament_libraries
         rclcpp
         tf2_ros
-        tf2_geometry_msgs
+	tf2_geometry_msgs
         std_msgs
         geometry_msgs
         sensor_msgs
@@ -47,6 +49,7 @@ list(APPEND ament_libraries
         image_transport
         ov_core
         ov_init
+        px4_msgs
 )
 
 ##################################################
@@ -60,13 +63,12 @@ list(APPEND LIBRARY_SOURCES
         src/state/StateHelper.cpp
         src/state/Propagator.cpp
         src/core/VioManager.cpp
-        src/core/VioManagerHelper.cpp
         src/update/UpdaterHelper.cpp
         src/update/UpdaterMSCKF.cpp
         src/update/UpdaterSLAM.cpp
         src/update/UpdaterZeroVelocity.cpp
 )
-list(APPEND LIBRARY_SOURCES src/ros/ROS2Visualizer.cpp src/ros/ROSVisualizerHelper.cpp)
+list(APPEND LIBRARY_SOURCES src/ros/ROS2Visualizer.cpp)
 file(GLOB_RECURSE LIBRARY_HEADERS "src/*.h")
 add_library(ov_msckf_lib SHARED ${LIBRARY_SOURCES} ${LIBRARY_HEADERS})
 ament_target_dependencies(ov_msckf_lib ${ament_libraries})
@@ -92,21 +94,6 @@ add_executable(run_subscribe_msckf src/run_subscribe_msckf.cpp)
 ament_target_dependencies(run_subscribe_msckf ${ament_libraries})
 target_link_libraries(run_subscribe_msckf ov_msckf_lib ${thirdparty_libraries})
 install(TARGETS run_subscribe_msckf DESTINATION lib/${PROJECT_NAME})
-
-add_executable(run_simulation src/run_simulation.cpp)
-ament_target_dependencies(run_simulation ${ament_libraries})
-target_link_libraries(run_simulation ov_msckf_lib ${thirdparty_libraries})
-install(TARGETS run_simulation DESTINATION lib/${PROJECT_NAME})
-
-add_executable(test_sim_meas src/test_sim_meas.cpp)
-ament_target_dependencies(test_sim_meas ${ament_libraries})
-target_link_libraries(test_sim_meas ov_msckf_lib ${thirdparty_libraries})
-install(TARGETS test_sim_meas DESTINATION lib/${PROJECT_NAME})
-
-add_executable(test_sim_repeat src/test_sim_repeat.cpp)
-ament_target_dependencies(test_sim_repeat ${ament_libraries})
-target_link_libraries(test_sim_repeat ov_msckf_lib ${thirdparty_libraries})
-install(TARGETS test_sim_repeat DESTINATION lib/${PROJECT_NAME})
 
 # Install launch and config directories
 install(DIRECTORY launch/ DESTINATION share/${PROJECT_NAME}/launch/)

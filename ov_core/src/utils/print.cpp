@@ -19,6 +19,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+
+
 #include "print.h"
 
 using namespace ov_core;
@@ -41,7 +43,8 @@ void Printer::setPrintLevel(const std::string &level) {
     setPrintLevel(PrintLevel::SILENT);
   else {
     std::cout << "Invalid print level requested: " << level << std::endl;
-    std::cout << "Valid levels are: ALL, DEBUG, INFO, WARNING, ERROR, SILENT" << std::endl;
+    std::cout << "Valid levels are: ALL, DEBUG, INFO, WARNING, ERROR, SILENT"
+              << std::endl;
     std::exit(EXIT_FAILURE);
   }
 }
@@ -71,25 +74,32 @@ void Printer::setPrintLevel(PrintLevel level) {
   default:
     std::cout << std::endl;
     std::cout << "Invalid print level requested: " << level << std::endl;
-    std::cout << "Valid levels are: ALL, DEBUG, INFO, WARNING, ERROR, SILENT" << std::endl;
+    std::cout << "Valid levels are: ALL, DEBUG, INFO, WARNING, ERROR, SILENT"
+              << std::endl;
     std::exit(EXIT_FAILURE);
   }
   std::cout << std::endl;
 }
 
-void Printer::debugPrint(PrintLevel level, const char location[], const char line[], const char *format, ...) {
+void Printer::debugPrint(PrintLevel level, const char location[],
+                         const char line[], const char *format, ...) {
   // Only print for the current debug level
-  if (static_cast<int>(level) < static_cast<int>(Printer::current_print_level)) {
+  if (static_cast<int>(level) <
+      static_cast<int>(Printer::current_print_level)) {
     return;
   }
 
   // Print the location info first for our debug output
   // Truncate the filename to the max size for the filepath
-  if (static_cast<int>(Printer::current_print_level) <= static_cast<int>(Printer::PrintLevel::DEBUG)) {
+  if (static_cast<int>(Printer::current_print_level) <=
+      static_cast<int>(Printer::PrintLevel::DEBUG)) {
     std::string path(location);
     std::string base_filename = path.substr(path.find_last_of("/\\") + 1);
     if (base_filename.size() > MAX_FILE_PATH_LEGTH) {
-      printf("%s", base_filename.substr(base_filename.size() - MAX_FILE_PATH_LEGTH, base_filename.size()).c_str());
+      printf("%s", base_filename
+                       .substr(base_filename.size() - MAX_FILE_PATH_LEGTH,
+                               base_filename.size())
+                       .c_str());
     } else {
       printf("%s", base_filename.c_str());
     }

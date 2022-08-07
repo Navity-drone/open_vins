@@ -19,6 +19,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+
+
 #ifndef OV_TYPE_TYPE_VEC_H
 #define OV_TYPE_TYPE_VEC_H
 
@@ -26,9 +28,6 @@
 
 namespace ov_type {
 
-/**
- * @brief Derived Type class that implements vector variables
- */
 class Vec : public Type {
 
 public:

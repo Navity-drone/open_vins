@@ -19,8 +19,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+
+
 #include <cmath>
-#include <csignal>
 #include <deque>
 #include <fstream>
 #include <iomanip>
@@ -35,8 +36,6 @@
 #include <boost/filesystem.hpp>
 
 #include "cam/CamRadtan.h"
-#include "feat/Feature.h"
-#include "feat/FeatureDatabase.h"
 #include "track/TrackAruco.h"
 #include "track/TrackDescriptor.h"
 #include "track/TrackKLT.h"
@@ -51,9 +50,6 @@ using namespace ov_core;
 
 // Our feature extractor
 TrackBase *extractor;
-
-// Define the function to be called when ctrl-c (SIGINT) is sent to process
-void signal_callback_handler(int signum) { std::exit(signum); }
 
 // Main function
 int main(int argc, char **argv) {
@@ -131,20 +127,24 @@ int main(int argc, char **argv) {
   PRINT_DEBUG("min pixel distance: %d\n", min_px_dist);
   PRINT_DEBUG("downsize aruco image: %d\n", do_downsizing);
 
-  // Fake camera info (we don't need this, as we are not using the normalized coordinates for anything)
+  // Fake camera info (we don't need this, as we are not using the normalized
+  // coordinates for anything)
   std::unordered_map<size_t, std::shared_ptr<CamBase>> cameras;
   for (int i = 0; i < 2; i++) {
     Eigen::Matrix<double, 8, 1> cam0_calib;
     cam0_calib << 1, 1, 0, 0, 0, 0, 0, 0;
-    std::shared_ptr<CamBase> camera_calib = std::make_shared<CamRadtan>(100, 100);
+    std::shared_ptr<CamBase> camera_calib =
+        std::make_shared<CamRadtan>(100, 100);
     camera_calib->set_value(cam0_calib);
     cameras.insert({i, camera_calib});
   }
 
   // Lets make a feature extractor
-  extractor = new TrackKLT(cameras, num_pts, num_aruco, !use_stereo, method, fast_threshold, grid_x, grid_y, min_px_dist);
-  // extractor = new TrackDescriptor(cameras, num_pts, num_aruco, !use_stereo, method, fast_threshold, grid_x, grid_y, min_px_dist,
-  // knn_ratio); extractor = new TrackAruco(cameras, num_aruco, !use_stereo, method, do_downsizing);
+  extractor = new TrackKLT(cameras, num_pts, num_aruco, !use_stereo, method,
+                           fast_threshold, grid_x, grid_y, min_px_dist);
+  // extractor = new TrackDescriptor(cameras, num_pts, num_aruco, !use_stereo,
+  // method, fast_threshold, grid_x, grid_y, min_px_dist, knn_ratio); extractor
+  // = new TrackAruco(cameras, num_aruco, !use_stereo, method, do_downsizing);
 
   //===================================================================================
   //===================================================================================
@@ -164,12 +164,7 @@ int main(int argc, char **argv) {
   // Loop forever until we break out
   double current_time = 0.0;
   std::deque<double> clonetimes;
-  signal(SIGINT, signal_callback_handler);
-#if ROS_AVAILABLE == 1
-  while (ros::ok()) {
-#else
   while (true) {
-#endif
 
     // Get the next frame (and fake advance time forward)
     cv::Mat frame;
@@ -193,7 +188,8 @@ int main(int argc, char **argv) {
     message.timestamp = current_time;
     message.sensor_ids.push_back(0);
     message.images.push_back(frame);
-    message.masks.push_back(cv::Mat::zeros(cv::Size(frame.cols, frame.rows), CV_8UC1));
+    message.masks.push_back(
+        cv::Mat::zeros(cv::Size(frame.cols, frame.rows), CV_8UC1));
     extractor->feed_new_camera(message);
 
     // Display the resulting tracks
@@ -207,8 +203,10 @@ int main(int argc, char **argv) {
     cv::waitKey(1);
 
     // Get lost tracks
-    std::shared_ptr<FeatureDatabase> database = extractor->get_feature_database();
-    std::vector<std::shared_ptr<Feature>> feats_lost = database->features_not_containing_newer(current_time);
+    std::shared_ptr<FeatureDatabase> database =
+        extractor->get_feature_database();
+    std::vector<std::shared_ptr<Feature>> feats_lost =
+        database->features_not_containing_newer(current_time);
 
     // Mark theses feature pointers as deleted
     for (size_t i = 0; i < feats_lost.size(); i++) {
@@ -229,7 +227,8 @@ int main(int argc, char **argv) {
       // Remove features that have reached their max track length
       double margtime = clonetimes.at(0);
       clonetimes.pop_front();
-      std::vector<std::shared_ptr<Feature>> feats_marg = database->features_containing(margtime);
+      std::vector<std::shared_ptr<Feature>> feats_marg =
+          database->features_containing(margtime);
       // Delete theses feature pointers
       for (size_t i = 0; i < feats_marg.size(); i++) {
         feats_marg[i]->to_delete = true;

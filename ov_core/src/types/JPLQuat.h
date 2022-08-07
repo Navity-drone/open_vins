@@ -19,6 +19,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+
+
 #ifndef OV_TYPE_TYPE_JPLQUAT_H
 #define OV_TYPE_TYPE_JPLQUAT_H
 
@@ -27,15 +29,6 @@
 
 namespace ov_type {
 
-/**
- * @brief Derived Type class that implements JPL quaternion
- *
- * This quaternion uses a left-multiplicative error state and follows the "JPL convention".
- * Please checkout our utility functions in the quat_ops.h file.
- * We recommend that people new quaternions check out the following resources:
- * - http://mars.cs.umn.edu/tr/reports/Trawny05b.pdf
- * - ftp://naif.jpl.nasa.gov/pub/naif/misc/Quaternion_White_Paper/Quaternions_White_Paper.pdf
- */
 class JPLQuat : public Type {
 
 public:
@@ -53,7 +46,8 @@ public:
    * quaternion with a quaternion built from a small axis-angle perturbation.
    *
    * @f[
-   * \bar{q}=norm\Big(\begin{bmatrix} 0.5*\mathbf{\theta_{dx}} \\ 1 \end{bmatrix}\Big) \hat{\bar{q}}
+   * \bar{q}=norm\Big(\begin{bmatrix} 0.5*\mathbf{\theta_{dx}} \\ 1
+   * \end{bmatrix}\Big) \hat{\bar{q}}
    * @f]
    *
    * @param dx Axis-angle representation of the perturbing quaternion
@@ -72,16 +66,21 @@ public:
   }
 
   /**
-   * @brief Sets the value of the estimate and recomputes the internal rotation matrix
+   * @brief Sets the value of the estimate and recomputes the internal rotation
+   * matrix
    * @param new_value New value for the quaternion estimate
    */
-  void set_value(const Eigen::MatrixXd &new_value) override { set_value_internal(new_value); }
+  void set_value(const Eigen::MatrixXd &new_value) override {
+    set_value_internal(new_value);
+  }
 
   /**
    * @brief Sets the fej value and recomputes the fej rotation matrix
    * @param new_value New value for the quaternion estimate
    */
-  void set_fej(const Eigen::MatrixXd &new_value) override { set_fej_internal(new_value); }
+  void set_fej(const Eigen::MatrixXd &new_value) override {
+    set_fej_internal(new_value);
+  }
 
   std::shared_ptr<Type> clone() override {
     auto Clone = std::shared_ptr<JPLQuat>(new JPLQuat());
@@ -104,7 +103,8 @@ protected:
   Eigen::Matrix<double, 3, 3> _Rfej;
 
   /**
-   * @brief Sets the value of the estimate and recomputes the internal rotation matrix
+   * @brief Sets the value of the estimate and recomputes the internal rotation
+   * matrix
    * @param new_value New value for the quaternion estimate
    */
   void set_value_internal(const Eigen::MatrixXd &new_value) {

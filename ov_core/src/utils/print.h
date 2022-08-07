@@ -19,6 +19,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+
+
 #ifndef OV_CORE_PRINT_H
 #define OV_CORE_PRINT_H
 
@@ -30,28 +32,30 @@
 
 namespace ov_core {
 
-/**
- * @brief Printer for open_vins that allows for various levels of printing to be done
- *
- * To set the global verbosity level one can do the following:
- * @code{.cpp}
- * ov_core::Printer::setPrintLevel("WARNING");
- * ov_core::Printer::setPrintLevel(ov_core::Printer::PrintLevel::WARNING);
- * @endcode
- */
 class Printer {
 public:
   /**
    * @brief The different print levels possible
    *
    * - PrintLevel::ALL : All PRINT_XXXX will output to the console
-   * - PrintLevel::DEBUG : "DEBUG", "INFO", "WARNING" and "ERROR" will be printed. "ALL" will be silenced
-   * - PrintLevel::INFO : "INFO", "WARNING" and "ERROR" will be printed. "ALL" and "DEBUG" will be silenced
-   * - PrintLevel::WARNING : "WARNING" and "ERROR" will be printed. "ALL", "DEBUG" and "INFO" will be silenced
-   * - PrintLevel::ERROR : Only "ERROR" will be printed. All the rest are silenced
+   * - PrintLevel::DEBUG : "DEBUG", "INFO", "WARNING" and "ERROR" will be
+   * printed. "ALL" will be silenced
+   * - PrintLevel::INFO : "INFO", "WARNING" and "ERROR" will be printed. "ALL"
+   * and "DEBUG" will be silenced
+   * - PrintLevel::WARNING : "WARNING" and "ERROR" will be printed. "ALL",
+   * "DEBUG" and "INFO" will be silenced
+   * - PrintLevel::ERROR : Only "ERROR" will be printed. All the rest are
+   * silenced
    * - PrintLevel::SILENT : All PRINT_XXXX will be silenced.
    */
-  enum PrintLevel { ALL = 0, DEBUG = 1, INFO = 2, WARNING = 3, ERROR = 4, SILENT = 5 };
+  enum PrintLevel {
+    ALL = 0,
+    DEBUG = 1,
+    INFO = 2,
+    WARNING = 3,
+    ERROR = 4,
+    SILENT = 5
+  };
 
   /**
    * @brief Set the print level to use for all future printing to stdout.
@@ -72,13 +76,15 @@ public:
    * @param line the line the print was made from
    * @param format The printf format
    */
-  static void debugPrint(PrintLevel level, const char location[], const char line[], const char *format, ...);
+  static void debugPrint(PrintLevel level, const char location[],
+                         const char line[], const char *format, ...);
 
   /// The current print level
   static PrintLevel current_print_level;
 
 private:
-  /// The max length for the file path.  This is to avoid very long file paths from
+  /// The max length for the file path.  This is to avoid very long file paths
+  /// from
   static constexpr uint32_t MAX_FILE_PATH_LEGTH = 30;
 };
 
@@ -93,21 +99,20 @@ private:
 /*
  * The different Types of print levels
  */
-#define PRINT_ALL(x...) ov_core::Printer::debugPrint(ov_core::Printer::PrintLevel::ALL, __FILE__, TOSTRING(__LINE__), x);
-#define PRINT_DEBUG(x...) ov_core::Printer::debugPrint(ov_core::Printer::PrintLevel::DEBUG, __FILE__, TOSTRING(__LINE__), x);
-#define PRINT_INFO(x...) ov_core::Printer::debugPrint(ov_core::Printer::PrintLevel::INFO, __FILE__, TOSTRING(__LINE__), x);
-#define PRINT_WARNING(x...) ov_core::Printer::debugPrint(ov_core::Printer::PrintLevel::WARNING, __FILE__, TOSTRING(__LINE__), x);
-#define PRINT_ERROR(x...) ov_core::Printer::debugPrint(ov_core::Printer::PrintLevel::ERROR, __FILE__, TOSTRING(__LINE__), x);
-
-// Assert that will always be here in release builds also
-// TODO: place this in a better header, just putting here for now...
-#define assert_r(EX) (void)((EX) || (__assert(#EX, __FILE__, __LINE__), 0))
-#ifdef __cplusplus
-extern "C" {
-#endif
-extern void __assert(const char *msg, const char *file, int line);
-#ifdef __cplusplus
-};
-#endif
+#define PRINT_ALL(x...)                                                        \
+  ov_core::Printer::debugPrint(ov_core::Printer::PrintLevel::ALL, __FILE__,    \
+                               TOSTRING(__LINE__), x);
+#define PRINT_DEBUG(x...)                                                      \
+  ov_core::Printer::debugPrint(ov_core::Printer::PrintLevel::DEBUG, __FILE__,  \
+                               TOSTRING(__LINE__), x);
+#define PRINT_INFO(x...)                                                       \
+  ov_core::Printer::debugPrint(ov_core::Printer::PrintLevel::INFO, __FILE__,   \
+                               TOSTRING(__LINE__), x);
+#define PRINT_WARNING(x...)                                                    \
+  ov_core::Printer::debugPrint(ov_core::Printer::PrintLevel::WARNING,          \
+                               __FILE__, TOSTRING(__LINE__), x);
+#define PRINT_ERROR(x...)                                                      \
+  ov_core::Printer::debugPrint(ov_core::Printer::PrintLevel::ERROR, __FILE__,  \
+                               TOSTRING(__LINE__), x);
 
 #endif /* OV_CORE_PRINT_H */

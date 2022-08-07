@@ -27,11 +27,6 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Default build as release
-if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel." FORCE)
-endif()
-
 # Enable compile optimizations
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -fsee -fomit-frame-pointer -fno-signed-zeros -fno-math-errno -funroll-loops")
 
@@ -43,16 +38,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g3 -Wall -Wuninitialized -fno-omit-fram
 # NOTE: https://github.com/romainreignier/share_ros1_ros2_lib_demo
 find_package(catkin QUIET COMPONENTS roscpp)
 find_package(ament_cmake QUIET)
-if (catkin_FOUND)
-    message(STATUS "ROS *1* version found, building ROS1.cmake")
-    include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/ROS1.cmake)
-elseif (ament_cmake_FOUND)
-    message(STATUS "ROS *2* version found, building ROS2.cmake")
-    include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/ROS2.cmake)
-else ()
-    message(STATUS "No ROS versions found, building ROS1.cmake")
-    include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/ROS1.cmake)
-endif ()
 
-
-
+message(STATUS "ROS *2* version found, building ROS2.cmake")
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/ROS2.cmake)
